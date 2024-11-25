@@ -1,0 +1,216 @@
+---
+title: "Understanding Regional and Temporal Variations in Food Prices: Insights from US Consumer Price Index and Economic Trends"
+subtitle: "--- TODO: CHANGE --- A Bayesian Approach Reveals the Impact of Economic Indicators and Geographic Disparities on Price Dynamics"
+author: 
+  - Tanmay Shinde
+thanks: "TODO - CHANGE THE LINK - Code and data are available at: [https://github.com/Tanmay-Shinde/Week10Reflection](https://github.com/Tanmay-Shinde/Week10Reflection)."
+date: today
+date-format: long
+abstract: "This paper examines how regional and temporal variations influence food-at-home prices across the United States, and the impact of economic factors such as purchase volume, food categories, and the Consumer Price Index (CPI) on these trends. --- The analysis reveals that while food prices have generally increased iver time, certain categories, such as dairy, fresh produce, and meats, tend to exhibit greater volatility. Factors such as purchase volume, food categories, and the CPI have a considerable influence on these price trends. Notably, higher CPI values correlate with increased food prices, and food categories with higher demand or limited supply exhibit more substantial price fluctuations --- . These findings provide actionable insights for policymakers and stakeholders in food economics, emphasizing the impact of region-specific market conditions and consumer purchasing behaviors on food pricing trends."
+format: pdf
+number-sections: true
+toc: true
+bibliography: references.bib
+---
+
+```{r}
+#| include: false
+#| warning: false
+#| message: false
+
+
+
+```
+
+
+# Introduction
+
+Food prices are a critical component of economic and social well-being, directly affecting food security, diet quality, and household expenditures. The Food-at-Home Monthly Area Prices (F-MAP) dataset, developed by the USDA Economic Research Service, offers detailed insights into food pricing trends across the United States. Covering the years 2012 to 2018, the dataset provides monthly price data for 90 food categories across 15 geographic areas, making it a valuable resource for understanding regional and temporal variations in food costs. This paper leverages the F-MAP data to analyze how regional disparities and time-based trends influence food-at-home prices and explores the role of economic factors such as purchase volume, food categories, and the Consumer Price Index (CPI) in shaping these patterns.
+
+The primary focus of this analysis is to estimate how regional differences, food categories, and time affect food prices in the U.S. The estimand is the expected food price for a given food category, time period, and region, conditional on factors such as purchase volume and CPI. By modeling these variations, we aim to uncover the drivers of price changes and predict trends in food costs.
+
+Using a Bayesian hierarchical model, this study analyzes monthly price data from the F-MAP dataset to uncover the drivers of food price variations. The model incorporates random effects to capture regional disparities and fixed effects to analyze the impact of economic factors, such as CPI, purchase volume, and food categories, on price trends. The analysis also highlights categories with greater price volatility and quantifies the influence of these factors on regional and national pricing dynamics. The findings reveal that food prices have generally increased over time, with categories like dairy, fresh produce, and meats experiencing higher price volatility. Economic factors such as purchase volume, food categories, and CPI significantly influence these trends, with higher CPI values strongly correlating with increased prices. Furthermore, food categories with higher demand or limited supply exhibit more substantial price fluctuations, underscoring the importance of understanding market-specific dynamics.
+
+Understanding food pricing trends is essential for addressing issues related to food affordability and access. These insights are particularly valuable for policymakers and stakeholders aiming to reduce regional disparities, promote equitable access to food, and mitigate the effects of inflation on low-income households. By analyzing the drivers of price variations, this study provides a framework for informed decision-making in food policy and economic planning.
+
+The remainder of this paper is structured as follows: @sec-data discusses the data sources, the F-MAP dataset and its variables, and pre-processing methods. @sec-model explains the Bayesian hierarchical model and methodology used for analysis. @sec-result presents the results, followed by a discussion of the key findings and conclusion of the study, as well as the limitations of the data in @sec-discussion. Finally, @sec-appendix --- TODO: COMPLETE WHAT THE APPENDIX INCLUDES ---.
+
+
+# Data {#sec-data}
+
+## Overview
+
+We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
+
+Overview text
+
+## Measurement
+	
+Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
+
+## Outcome variables
+
+Add graphs, tables and text. Use sub-sub-headings for each outcome variable or update the subheading to be singular.
+
+
+Talk more about it.
+
+
+Talk way more about it. 
+
+## Predictor variables
+
+Add graphs, tables and text.
+
+Use sub-sub-headings for each outcome variable and feel free to combine a few into one if they go together naturally.
+
+
+
+# Model
+
+The goal of our modelling strategy is twofold. Firstly,...
+
+Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+
+## Model set-up
+
+<!-- Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.   -->
+
+<!-- \begin{align}  -->
+<!-- y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\ -->
+<!-- \mu_i &= \alpha + \beta_i + \gamma_i\\ -->
+<!-- \alpha &\sim \mbox{Normal}(0, 2.5) \\ -->
+<!-- \beta &\sim \mbox{Normal}(0, 2.5) \\ -->
+<!-- \gamma &\sim \mbox{Normal}(0, 2.5) \\ -->
+<!-- \sigma &\sim \mbox{Exponential}(1) -->
+<!-- \end{align} -->
+
+<!-- We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`. -->
+
+
+### Model justification
+
+We expect a positive relationship between the size of the wings and time spent aloft. In particular...
+
+We can use maths by including latex between dollar signs, for instance $\theta$.
+
+
+# Results
+
+Our results are summarized in @tbl-modelresults.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+
+# library(rstanarm)
+
+#first_model <- readRDS(file = here::here("models/first_model.rds"))
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: tbl-modelresults
+#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
+#| warning: false
+
+# modelsummary::modelsummary(
+#   list(
+#     "First model" = first_model
+#   ),
+#   statistic = "mad",
+#   fmt = 2
+# )
+```
+
+
+
+
+# Discussion
+
+## First discussion point {#sec-first-point}
+
+If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+
+## Second discussion point
+
+Please don't use these as sub-heading labels - change them to be what your point actually is.
+
+## Third discussion point
+
+## Weaknesses and next steps
+
+Weaknesses and next steps should also be included.
+
+\newpage
+
+\appendix
+
+# Appendix {-}
+
+
+# Additional data details
+
+# Model details {#sec-model-details}
+
+## Posterior predictive check
+
+In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
+
+In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
+
+```{r}
+#| eval: true
+#| echo: false
+#| message: false
+#| warning: false
+#| label: fig-ppcheckandposteriorvsprior
+#| layout-ncol: 2
+#| fig-cap: "Examining how the model fits, and is affected by, the data"
+#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
+
+# pp_check(first_model) +
+#   theme_classic() +
+#   theme(legend.position = "bottom")
+# 
+# posterior_vs_prior(first_model) +
+#   theme_minimal() +
+#   scale_color_brewer(palette = "Set1") +
+#   theme(legend.position = "bottom") +
+#   coord_flip()
+```
+
+## Diagnostics
+
+@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
+
+@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
+
+```{r}
+#| echo: false
+#| eval: true
+#| message: false
+#| warning: false
+#| label: fig-stanareyouokay
+#| fig-cap: "Checking the convergence of the MCMC algorithm"
+#| fig-subcap: ["Trace plot", "Rhat plot"]
+#| layout-ncol: 2
+
+# plot(first_model, "trace")
+# 
+# plot(first_model, "rhat")
+```
+
+# Appendix
+
+Please include an Appendix where you focus on an aspect of surveys, sampling or observational data, related to your paper. This should be an in-depth exploration, akin to the “idealized methodology/survey/pollster methodology” sections of Paper 2. Some aspect of this is likely covered in the Measurement sub-section of your Data section, but this Appendix would be much more detailed, and might include aspects like simulation, links to the literature, explorations and comparisons, among other aspects.
+
+
+\newpage
+
+
+# References
+
