@@ -81,7 +81,7 @@ The data is available to download in .xlsx format on the [USDA Economic Research
 
 ## Data Processing and Cleaning
 
-We use the statistical programming language R [@citeR] to clean the data using various helpful packages like, readxl [@cite-readxl], dplyr [@cite-dplyr], tidyr [@cite-tidyr], lubridate [@cite-lubridate], and arrow [@cite-arrow].
+We use the statistical programming language R [@citeR] to clean the data using various helpful packages like, readxl [@cite-readxl], dplyr [@cite-dplyr], tidyr [@cite-tidyr], lubridate [@cite-lubridate], and arrow [@cite-arrow]. Further, libraries like ggplot2 [@cite-gg], knitr [@cite-knitr] were used to analyze the data and create visualizations.
 
 The initial step involved removing unnecessary variables, retaining only those essential for analysis. This included variables such as unit_value_mean_wtd (weighted unit value), purchase_grams_wtd (weighted purchase volume), price_index_GEKS (Consumer Price Index), EFPG (food category), metroregion_name (region), and time. Rows containing missing values in any of the key variables were removed to maintain data integrity. The dependent variable, unitValue, was log-transformed to stabilize variance and linearize relationships, to ensure no assumptions are violations in modelling. The time variable, originally in year-month format, was converted into a continuous variable representing the number of months since January 2012. This allows temporal trends to be modeled effectively as a continuous variable. Categorical variables such as region and category were standardized and converted into factor variables, enabling the model to treat them as categorical inputs. To improve the convergence of the Bayesian model, predictors such as cpi and purchaseVolume were normalized by centering them around zero and scaling them to have a standard deviation of one.
 
@@ -109,7 +109,7 @@ The response variable, unitValue, represents the weighted mean price per 100 gra
 #| eval: true
 #| warning: false
 #| message: false
-#| label: out-summ-stats
+#| label: tbl-outsumm
 #| tbl-cap: "Summary Statistics for log of Unit Value"
 
 
@@ -127,15 +127,15 @@ kable(summary_stats_outcome, )
 
 ``` 
 
-The transformed outcome variable, unitValue_lg, represents the log-transformed weighted mean price per 100 grams of food items, with a mean of -0.775 and a median of -0.777, indicating a near-symmetric distribution. The standard deviation of 0.746 reflects moderate variability in prices, while the range, spanning from a minimum of -3.411 to a maximum of 1.191, highlights significant disparities in food costs across categories, regions, and time periods. The log transformation normalizes the data, reducing skewness and ensuring that extreme values in the original price variable do not disproportionately influence the analysis.
+From @tbl-outsumm, we can see that the transformed outcome variable, unitValue_lg, has a mean of -0.692 and a median of -0.713, indicating a near-symmetric distribution. The standard deviation of 0.687 reflects moderate variability in prices, while the range, spanning from a minimum of -2.813 to a maximum of 1.191, highlights significant disparities in food costs across categories, regions, and time periods. The log transformation normalizes the data, reducing skewness and ensuring that extreme values in the original price variable do not disproportionately influence the analysis. 
 
 ```{r}
 #| echo: false
 #| eval: true
 #| warning: false
 #| message: false
-#| label: out-summ-stats
-#| tbl-cap: "Summary Statistics for log of Unit Value"
+#| label: hist-out
+#| tbl-cap: "Distribution of Log-Transformed Food Prices (Unit Value)"
 
 # Histogram for unitValue_lg
 
@@ -146,33 +146,16 @@ ggplot(analysis_data, aes(x = unitValue_lg)) +
 
 ``` 
 
+@hist-out illustrates a symmetric, unimodal distribution of unitValue_lg, centered near -0.7, with values ranging from approximately -2.8 to 1.2. This indicates that most food prices cluster around the median value, with fewer extreme high or low prices.
+
+More details and exploratory analysis about the outcome variable can be found in [Appendix -@sec-data-details]
 
 
-```{r}
-#| echo: false
-#| eval: true
-#| warning: false
-#| message: false
-#| label: out-summ-stats
-#| tbl-cap: "Summary Statistics for log of Unit Value"
-
-filtered_data <- analysis_data %>%
-  filter(grepl("Census Region", region, ignore.case = TRUE))
-
-# Boxplot of unitValue_lg by region
-ggplot(filtered_data, aes(x = region, y = unitValue_lg)) +
-  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
-  labs(title = "Log Unit Value by Region", x = "Region", y = "Log Unit Value") +
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-``` 
 
 ## Predictor variables
 
-Add graphs, tables and text.
 
-Use sub-sub-headings for each outcome variable and feel free to combine a few into one if they go together naturally.
+
 
 
 
@@ -303,6 +286,59 @@ As additional years of price data become available beyond the base period, the G
 Bilateral indexes with a fixed base period can become less representative of the cost of food as the indexes move further away from the base, due to the effects of product turnover, as products are discontinued and new products are introduced. Although bilateral price indexes can be updated using chained indexes, which capture product substitution, chained indexes are subject to drifting. Chain drift is a phenomenon in which the price index drifts lower even as item-level prices return to their base levels. Multilateral indexes are fully transitive and free of chain drift. While chain drift is possible in rolling-window multilateral indexes, if a wide window length is chosen, the rolling-window index will be largely free of drift despite not being fully transitive. The 1-year rolling window used in the F-MAP GEKS has been found to be sufficient to remove chain drift caused by high-frequency data and seasonal variation in variety.
 
 The GEKS index builds upon bilateral indexes as elements. The multilateral GEKS index is the geometric mean of all possible Fisher Ideal index month-area pairings. The Fisher Ideal index is, in turn, based on the geometric mean of the Laspeyres and Paasche indexes. Therefore, constructing a GEKS index requires first calculating Laspeyres, Paasche, and Fisher Ideal indexes. We avoid going into deeper details of the above indices as the math gets extremely complicated. For more information about the construction of the F-MAP GEKS, the rolling-window GEKS, and the five supplemental indexes (i.e., Laspeyres, Paasche, Törnqvist, Fisher Ideal, and Caves-Christensen-Diewert (CCD)), you can refer to ERS’s report on the F-MAP methods. [@Sweitzer2024]
+
+## EDA for Outcome Variable
+
+### Regional Trends
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: bxplt-out
+#| tbl-cap: "Regional Variations in Log-Transformed Food Prices"
+
+filtered_data <- analysis_data %>%
+  filter(grepl("Census Region", region, ignore.case = TRUE))
+
+# Boxplot of unitValue_lg by region
+ggplot(filtered_data, aes(x = region, y = unitValue_lg)) +
+  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
+  labs(title = "Log Unit Value by Region", x = "Region", y = "Log Unit Value") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+``` 
+@bxplt-out reveals slight regional variations in log unit values. The Northeast and West regions show marginally higher median prices compared to the Midwest and South, reflecting higher food costs often associated with coastal or urban areas. The Midwest exhibits the largest variability, including a notable outlier on the high end, suggesting either an expensive food category or a regional anomaly. Despite these differences, the overall consistency in median prices across regions highlights a broadly stable pricing structure with minor geographic deviations. These trends emphasize the need to investigate the economic and geographic factors contributing to these regional disparities.
+
+### Temporal Trends
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: plt-timetrend
+#| tbl-cap: "Temporal Variations in Log-Transformed Food Prices"
+
+transformed_data <- analysis_data %>% 
+  mutate(time = time/12 + 2012) %>%
+  group_by(time) %>%
+  summarise(mean_unitValue_lg = mean(unitValue_lg, na.rm = TRUE))
+
+ggplot(transformed_data, aes(x = time, y = mean_unitValue_lg)) +
+  geom_line(color = "blue", size = 0.9) +
+  labs(title = "Trend Over Time: Log-Transformed Unit Value of Food Prices",
+       x = "Time (in Years)",
+       y = "Log Unit Value") +
+  theme_minimal()
+
+``` 
+
+@plt-timetrend illustrates the log-transformed unit value of food prices from 2012 to 2018, revealing a general upward trend over time. Initially, from 2012 to 2014, there is only a modest increase in the log-transformed values. However, in 2014, prices increase sharply followed by a period of 3 years characterized by heightened volatility, with pronounced peaks and troughs, and another increase in the prices in 2018. Thus, the overall trajectory for the log-transformed unit value of food prices from 2012 to 2018 remains upwards.
+
+## EDA for Predictor Variables
 
 
 # Model details {#sec-model-details}

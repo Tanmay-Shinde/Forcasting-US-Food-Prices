@@ -47,17 +47,17 @@ analysis_data <- analysis_data %>%
   mutate(region = factor(region),
          category = factor(category))
 
-# # removing outliers to ensure consistency in measurements
-# remove_outliers <- function(x) {
-#   Q1 <- quantile(x, 0.25)
-#   Q3 <- quantile(x, 0.75)
-#   IQR <- Q3 - Q1
-#   x[x >= (Q1 - 1.5 * IQR) & x <= (Q3 + 1.5 * IQR)]
-# }
-# 
-# analysis_data <- analysis_data %>%
-#   filter(purchaseVolume %in% remove_outliers(purchaseVolume),
-#          unitValue_lg %in% remove_outliers(unitValue_lg))
+# removing outliers to ensure consistency in measurements
+remove_outliers <- function(x) {
+  Q1 <- quantile(x, 0.25)
+  Q3 <- quantile(x, 0.75)
+  IQR <- Q3 - Q1
+  x[x >= (Q1 - 1.5 * IQR) & x <= (Q3 + 1.5 * IQR)]
+}
+
+analysis_data <- analysis_data %>%
+  filter(purchaseVolume %in% remove_outliers(purchaseVolume),
+         unitValue_lg %in% remove_outliers(unitValue_lg))
 
 # normalizing the predictor variables for improving accuracy of Bayesian model
 normalize <- function(x) {
@@ -70,4 +70,3 @@ analysis_data <- analysis_data %>%
 
 # save as parquet file
 write_parquet(analysis_data, "../data/analysis_data/analysis_data.parquet")
-
