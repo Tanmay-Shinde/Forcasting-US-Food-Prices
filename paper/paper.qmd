@@ -80,11 +80,17 @@ The data is available to download in .xlsx format on the [USDA Economic Research
 
 ## Data Processing and Cleaning
 
-We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
+We use the statistical programming language R [@citeR].... Our data [@USDA_FMAP].... Following @tellingstories, we consider...
 
 ## Measurement
 	
-Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
+The dataset is constructed using retail scanner data sourced from approximately 50,000–60,000 retail stores annually. These data represent nominal dollar sales and quantities of food items sold at various retail establishments, including grocery stores, supercenters, and convenience stores. Weekly sales data are aggregated into monthly intervals, ensuring alignment with the temporal structure of the F-MAP dataset. If a sales week spans two months, sales and units are proportionally allocated based on the number of days in each month.
+
+Outlier detection and removal is a key step in data preparation. Unit value outliers are identified using the interquartile range (IQR) method, which eliminates extreme values in the price distribution. This ensures that the dataset reflects accurate and representative price information. To standardize unit values across varying product sizes, package weights are converted into grams, and prices are expressed per 100 grams. Products are then classified into 90 detailed food categories based on the ERS Food Purchase Groups (EFPG) system, which facilitates alignment with dietary guidelines.
+
+Retailer-level sales data are further adjusted to represent individual stores. For retailers reporting sales at a broader marketing area level, sales are proportionally allocated to individual stores using established store-level weights. These weights adjust for the non-representative sampling of stores in the scanner data, ensuring the dataset is nationally representative. Weighted and unweighted estimates of unit values are calculated to provide flexibility in analysis.
+
+Finally, price measures include both unit values and multilateral price indexes. The primary price index, GEKS, quantifies the cost of a basket of goods across time and space, enabling robust comparisons while accounting for product substitution and turnover. These measures effectively translate complex real-world phenomena, such as regional price variation and inflation, into structured data entries, supporting detailed economic and policy analysis.
 
 ## Outcome variables
 
