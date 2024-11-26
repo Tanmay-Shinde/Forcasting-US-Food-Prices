@@ -221,16 +221,55 @@ ggplot(analysis_data, aes(x = cpi)) +
 
 ```
 
+More details and exploratory analysis about the cpi variable can be found in [Appendix -@sec-data-details]
+
 ### Purchase Volume
 
+The Purchase Volume variable represents the total quantity of food purchased, measured in grams, weighted by store-level survey weights to ensure representativeness across geographic areas and time. This variable is crucial in understanding consumer purchasing behavior, providing insights into the relationship between food quantity consumed and factors such as price, region, and time. It also helps in identifying demand patterns for various food categories and regions, which can influence pricing and policy decisions. High purchase volumes could indicate greater demand or accessibility, whereas lower volumes might reflect supply constraints, lower demand, or higher relative prices. This variable is key for examining the impact of economic factors like Consumer Price Index (CPI) and regional trends on consumer behavior.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: tbl-pvolsumm
+#| tbl-cap: "Summary Statistics for Purchase Volume"
 
 
+# Summary statistics for outcome variable
+summary_stats_outcome <- analysis_data %>%
+  summarise(
+    mean = mean(purchaseVolume, na.rm = TRUE),
+    median = median(purchaseVolume, na.rm = TRUE),
+    sd = sd(purchaseVolume, na.rm = TRUE),
+    min = min(purchaseVolume, na.rm = TRUE),
+    max = max(purchaseVolume, na.rm = TRUE)
+)
 
+kable(summary_stats_outcome)
 
+``` 
 
+@tbl-pvolsumm illustrates the normalization of the variable with mean as 0 and standard deviation as 1. The minimum and maximum values of -0.736 and 4.266, respectively, highlight the presence of extreme values or outliers on the right side. The median of -0.444 indicates that there might be a slight right skew in the data. @fig-hist-pvol also shows a high spread in the data and a heavily right-skewed histogram that accurately represent the expected purchasing trends, with most purchasing volumes being at the lower end and then becoming lesser and lesser as one goes right.
 
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-hist-pvol
+#| fig-cap: "Distribution of Purchase Volume of Groceries"
 
+# Histogram for cpi values
 
+ggplot(analysis_data, aes(x = purchaseVolume)) +
+  geom_histogram(bins = 100, fill = "blue", alpha = 0.7, color = "black") +
+  labs(title = "Distribution of Purchase Volume", x = "Standardized Purchase Volumes", y = "Frequency") +
+  theme_minimal()
+
+```
+
+More details and exploratory analysis about the purchaseVolume variable can be found in [Appendix -@sec-data-details]
 
 # Model {#sec-model}
 
@@ -405,7 +444,6 @@ ggplot(transformed_data, aes(x = time, y = mean_unitValue_lg)) +
   labs(title = "Trend Over Time: Log-Transformed Unit Value of Food Prices",
        x = "Time (in Years)",
        y = "Log Unit Value") +
-  geom_smooth(method = "loess", color = "red", se = FALSE) +
   theme_minimal()
 
 ``` 
@@ -456,13 +494,58 @@ ggplot(transformed_data, aes(x = time, y = mean_cpi)) +
   labs(title = "Trend Over Time: Consumer Price index",
        x = "Time (in Years)",
        y = "CPI") +
-  geom_smooth(method = "loess", color = "red", se = FALSE) +
   theme_minimal()
 
 ``` 
 
+@fig-timetrend-cpi also illustrates the general upward trend in the CPI values from 2012 to 2018.
 
+## Purchase Volume
 
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-bxplt-pvol
+#| fig-cap: "Regional Variations in Purchase Volume"
+
+filtered_data <- analysis_data %>%
+  filter(grepl("Census Region", region, ignore.case = TRUE))
+
+# Boxplot of unitValue_lg by region
+ggplot(filtered_data, aes(x = region, y = purchaseVolume)) +
+  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
+  labs(title = "Purchase Volume by Region", x = "Region", y = "purchaseVolume") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+From @fig-bxplt-pvol, we can see that across all regions, the mean purchase volume is relatively consistent, suggesting similar central tendencies in the amount of food purchased. However, the South exhibits a slightly higher mean and a wider interquartile range, indicating greater variability in purchase volume compared to other regions - which might be due to the lower cpi values in the South as revealed in @fig-bxplt-cpi above.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-timetrend-pvol
+#| fig-cap: "Temporal Variations in the Purchase Volume of Groceries"
+
+transformed_data <- analysis_data %>% 
+  mutate(time = time/12 + 2012) %>%
+  group_by(time) %>%
+  summarise(mean_pvol = mean(purchaseVolume, na.rm = TRUE))
+
+ggplot(transformed_data, aes(x = time, y = mean_pvol)) +
+  geom_line(color = "blue", size = 0.9) +
+  labs(title = "Trend Over Time: Purchase Volume",
+       x = "Time (in Years)",
+       y = "Purchase Volume") +
+  theme_minimal()
+
+```
+
+@fig-timetrend-pvol shows notable fluctuations from 2012 to 2018, suggesting periodic variability in consumer purchasing behavior. Peaks are observed around specific intervals, likely reflecting seasonal trends (peaks usually occur during the year-end i.e. the holiday season) or external economic factors influencing consumer demand. Over time, the periodic nature of these fluctuations appears consistent, with no clear upward or downward trend, indicating that the purchase volume stabilizes around recurring patterns.
 
 # Model details {#sec-model-details}
 
