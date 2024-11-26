@@ -18,7 +18,8 @@ bibliography: references.bib
 #| warning: false
 #| message: false
 
-
+library(knitr)
+library(ggplot2)
 
 ```
 
@@ -99,15 +100,73 @@ The dataset also includes price indexes, which measure the cost of a basket of g
 
 Through this rigorous process, real-world phenomena such as regional price variations, inflationary trends, and food category-specific dynamics are translated into structured data entries. The combination of high-frequency retail data, standardized unit values, and multilateral price indexes ensures that the F-MAP dataset is both comprehensive and precise, supporting its use in economic research and policy-making. A more detailed overview of the measurement process, including the data acquisition, adjustments, and methods for calculating the price index can be found in [Appendix -@sec-data-details].
 
-## Outcome variables
+## Outcome variable
 
-Add graphs, tables and text. Use sub-sub-headings for each outcome variable or update the subheading to be singular.
+The response variable, unitValue, represents the weighted mean price per 100 grams of a food item within a specific food category, geographic region, and time period. In this analysis, the variable is log-transformed to create unitValue_lg, which helps stabilize variance, improve normality, and facilitate the interpretation of model coefficients in percentage terms. The log transformation allows us to understand the proportional changes in price rather than absolute changes, which is particularly useful for identifying relative price dynamics across categories and regions.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: out-summ-stats
+#| tbl-cap: "Summary Statistics for log of Unit Value"
 
 
-Talk more about it.
+# Summary statistics for outcome variable
+summary_stats_outcome <- analysis_data %>%
+  summarise(
+    mean = mean(unitValue_lg, na.rm = TRUE),
+    median = median(unitValue_lg, na.rm = TRUE),
+    sd = sd(unitValue_lg, na.rm = TRUE),
+    min = min(unitValue_lg, na.rm = TRUE),
+    max = max(unitValue_lg, na.rm = TRUE)
+)
+
+kable(summary_stats_outcome, )
+
+``` 
+
+The transformed outcome variable, unitValue_lg, represents the log-transformed weighted mean price per 100 grams of food items, with a mean of -0.775 and a median of -0.777, indicating a near-symmetric distribution. The standard deviation of 0.746 reflects moderate variability in prices, while the range, spanning from a minimum of -3.411 to a maximum of 1.191, highlights significant disparities in food costs across categories, regions, and time periods. The log transformation normalizes the data, reducing skewness and ensuring that extreme values in the original price variable do not disproportionately influence the analysis.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: out-summ-stats
+#| tbl-cap: "Summary Statistics for log of Unit Value"
+
+# Histogram for unitValue_lg
+
+ggplot(analysis_data, aes(x = unitValue_lg)) +
+  geom_histogram(bins = 30, fill = "blue", alpha = 0.7, color = "black") +
+  labs(title = "Distribution of Log Unit Value", x = "Log Unit Value", y = "Frequency") +
+  theme_minimal()
+
+``` 
 
 
-Talk way more about it. 
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: out-summ-stats
+#| tbl-cap: "Summary Statistics for log of Unit Value"
+
+filtered_data <- analysis_data %>%
+  filter(grepl("Census Region", region, ignore.case = TRUE))
+
+# Boxplot of unitValue_lg by region
+ggplot(filtered_data, aes(x = region, y = unitValue_lg)) +
+  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
+  labs(title = "Log Unit Value by Region", x = "Region", y = "Log Unit Value") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+``` 
 
 ## Predictor variables
 
