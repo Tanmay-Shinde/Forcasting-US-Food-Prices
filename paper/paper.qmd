@@ -2,7 +2,7 @@
 title: "Understanding Regional and Temporal Variations in Food Prices: Insights from US Consumer Price Index and Economic Trends"
 subtitle: "--- TODO: CHANGE --- A Bayesian Approach Reveals the Impact of Economic Indicators and Geographic Disparities on Price Dynamics"
 author: 
-  - Tanmay Shinde
+  - Tanmay Sachin Shinde
 thanks: "TODO - CHANGE THE LINK - Code and data are available at: [https://github.com/Tanmay-Shinde/Week10Reflection](https://github.com/Tanmay-Shinde/Week10Reflection)."
 date: today
 date-format: long
@@ -185,7 +185,7 @@ Each value recorded under the CPI column represents the consumer price index of 
 #| tbl-cap: "Summary Statistics for CPI"
 
 
-# Summary statistics for outcome variable
+# Summary statistics for cpi
 summary_stats_outcome <- analysis_data %>%
   summarise(
     mean = mean(cpi, na.rm = TRUE),
@@ -236,7 +236,7 @@ The Purchase Volume variable represents the total quantity of food purchased, me
 #| tbl-cap: "Summary Statistics for Purchase Volume"
 
 
-# Summary statistics for outcome variable
+# Summary statistics for purchase volume variable
 summary_stats_outcome <- analysis_data %>%
   summarise(
     mean = mean(purchaseVolume, na.rm = TRUE),
