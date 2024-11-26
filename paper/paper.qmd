@@ -20,6 +20,10 @@ bibliography: references.bib
 
 library(knitr)
 library(ggplot2)
+library(dplyr)
+library(arrow)
+
+analysis_data <- read_parquet("../data/analysis_data/analysis_data.parquet")
 
 ```
 
@@ -123,7 +127,7 @@ summary_stats_outcome <- analysis_data %>%
     max = max(unitValue_lg, na.rm = TRUE)
 )
 
-kable(summary_stats_outcome, )
+kable(summary_stats_outcome)
 
 ``` 
 
@@ -134,8 +138,8 @@ From @tbl-outsumm, we can see that the transformed outcome variable, unitValue_l
 #| eval: true
 #| warning: false
 #| message: false
-#| label: hist-out
-#| tbl-cap: "Distribution of Log-Transformed Food Prices (Unit Value)"
+#| label: fig-hist-out
+#| fig-cap: "Distribution of Log-Transformed Food Prices (Unit Value)"
 
 # Histogram for unitValue_lg
 
@@ -146,13 +150,82 @@ ggplot(analysis_data, aes(x = unitValue_lg)) +
 
 ``` 
 
-@hist-out illustrates a symmetric, unimodal distribution of unitValue_lg, centered near -0.7, with values ranging from approximately -2.8 to 1.2. This indicates that most food prices cluster around the median value, with fewer extreme high or low prices.
+@fig-hist-out illustrates a symmetric, unimodal distribution of unitValue_lg, centered near -0.7, with values ranging from approximately -2.8 to 1.2. This indicates that most food prices cluster around the median value, with fewer extreme high or low prices.
 
 More details and exploratory analysis about the outcome variable can be found in [Appendix -@sec-data-details]
 
-
-
 ## Predictor variables
+
+### Time
+
+The time variable in the analysis dataset is a continuous variable, representing the number of months since January 2012 when the data was recorded. This variable is important to help us understand temporal trends in the data and fluctuations in the unit value over time. The first month Jan-2012 is represented as 0, Feb-2012 as 1, and so on until Dec-2018 represented as 83.
+
+### Category
+
+It is a categorical variable representing the 90 ERS Food Purchase Groups (EFPGs). The categories include different types of grains, fruits and vegetables, dairy, meat and protein foods, prepared meals, salads, and other foods.
+
+### Region
+
+The region variable represents 15 geographic regions (10 metropolitan areas and 4 Census regions and 1 National category). the region variable will help us analyze the regional and geographical trends and variations in food prices
+
+For each of these time, region, and food group combinations, the F-MAP includes the following value variables:
+
+### Consumer Price Index (CPI)
+
+The Consumer Price Index (CPI) variable in the dataset represents the weighted price index (GEKS index) that measures the cost of a basket of goods over time, standardized relative to a base period (2016–2018). The CPI is unitless, with values below 1 indicating prices lower than the base period average and values above 1 indicating higher prices. The cpi is normalized to improve accuracy in modelling. This variable is critical in understanding inflationary trends and regional price dynamics, as it allows comparisons of relative purchasing power and economic conditions over time and across regions.
+
+Each value recorded under the CPI column represents the consumer price index of one particular food group out of the 90 EFPGs in a particular region for that month.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: tbl-cpisumm
+#| tbl-cap: "Summary Statistics for CPI"
+
+
+# Summary statistics for outcome variable
+summary_stats_outcome <- analysis_data %>%
+  summarise(
+    mean = mean(cpi, na.rm = TRUE),
+    median = median(cpi, na.rm = TRUE),
+    sd = sd(cpi, na.rm = TRUE),
+    min = min(cpi, na.rm = TRUE),
+    max = max(cpi, na.rm = TRUE)
+)
+
+kable(summary_stats_outcome)
+
+``` 
+
+@tbl-cpisumm illustrates the normalization of the variable with mean as 0 and standard deviation as 1. The minimum and maximum values of -7.04 and 22.79, respectively, highlight the presence of extreme values or outliers. These statistics indicate notable regional or temporal differences in CPI values, reflecting the varying economic conditions or price trends across the observed time period and regions. @fig-hist-cpi also shows a spread of the data from -7 to 22, with most of the values clustered around 0 with a fairly normal distribution.
+
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-hist-cpi
+#| fig-cap: "Distribution of GEKS Consumer Price Index (CPI)"
+
+# Histogram for cpi values
+
+
+
+ggplot(analysis_data, aes(x = cpi)) +
+  geom_histogram(bins = 100, fill = "blue", alpha = 0.7, color = "black") +
+  labs(title = "Distribution of CPI", x = "CPI", y = "Frequency") +
+  theme_minimal()
+
+```
+
+### Purchase Volume
+
+
+
+
 
 
 
@@ -296,8 +369,8 @@ The GEKS index builds upon bilateral indexes as elements. The multilateral GEKS 
 #| eval: true
 #| warning: false
 #| message: false
-#| label: bxplt-out
-#| tbl-cap: "Regional Variations in Log-Transformed Food Prices"
+#| label: fig-bxplt-out
+#| fig-cap: "Regional Variations in Log-Transformed Food Prices"
 
 filtered_data <- analysis_data %>%
   filter(grepl("Census Region", region, ignore.case = TRUE))
@@ -310,7 +383,7 @@ ggplot(filtered_data, aes(x = region, y = unitValue_lg)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ``` 
-@bxplt-out reveals slight regional variations in log unit values. The Northeast and West regions show marginally higher median prices compared to the Midwest and South, reflecting higher food costs often associated with coastal or urban areas. The Midwest exhibits the largest variability, including a notable outlier on the high end, suggesting either an expensive food category or a regional anomaly. Despite these differences, the overall consistency in median prices across regions highlights a broadly stable pricing structure with minor geographic deviations. These trends emphasize the need to investigate the economic and geographic factors contributing to these regional disparities.
+@fig-bxplt-out reveals slight regional variations in log unit values. The Northeast and West regions show marginally higher median prices compared to the Midwest and South, reflecting higher food costs often associated with coastal or urban areas. The Midwest exhibits the largest variability, including a notable outlier on the high end, suggesting either an expensive food category or a regional anomaly. Despite these differences, the overall consistency in median prices across regions highlights a broadly stable pricing structure with minor geographic deviations. These trends emphasize the need to investigate the economic and geographic factors contributing to these regional disparities.
 
 ### Temporal Trends
 
@@ -319,8 +392,8 @@ ggplot(filtered_data, aes(x = region, y = unitValue_lg)) +
 #| eval: true
 #| warning: false
 #| message: false
-#| label: plt-timetrend
-#| tbl-cap: "Temporal Variations in Log-Transformed Food Prices"
+#| label: fig-timetrend
+#| fig-cap: "Temporal Variations in Log-Transformed Food Prices"
 
 transformed_data <- analysis_data %>% 
   mutate(time = time/12 + 2012) %>%
@@ -332,13 +405,63 @@ ggplot(transformed_data, aes(x = time, y = mean_unitValue_lg)) +
   labs(title = "Trend Over Time: Log-Transformed Unit Value of Food Prices",
        x = "Time (in Years)",
        y = "Log Unit Value") +
+  geom_smooth(method = "loess", color = "red", se = FALSE) +
   theme_minimal()
 
 ``` 
 
-@plt-timetrend illustrates the log-transformed unit value of food prices from 2012 to 2018, revealing a general upward trend over time. Initially, from 2012 to 2014, there is only a modest increase in the log-transformed values. However, in 2014, prices increase sharply followed by a period of 3 years characterized by heightened volatility, with pronounced peaks and troughs, and another increase in the prices in 2018. Thus, the overall trajectory for the log-transformed unit value of food prices from 2012 to 2018 remains upwards.
+@fig-timetrend illustrates the log-transformed unit value of food prices from 2012 to 2018, revealing a general upward trend over time. Initially, from 2012 to 2014, there is only a modest increase in the log-transformed values. However, in 2014, prices increase sharply followed by a period of 3 years characterized by heightened volatility, with pronounced peaks and troughs, and another increase in the prices in 2018. Thus, the overall trajectory for the log-transformed unit value of food prices from 2012 to 2018 remains upwards.
 
 ## EDA for Predictor Variables
+
+### CPI
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-bxplt-cpi
+#| fig-cap: "Regional Variations in CPI"
+
+filtered_data <- analysis_data %>%
+  filter(grepl("Census Region", region, ignore.case = TRUE))
+
+# Boxplot of unitValue_lg by region
+ggplot(filtered_data, aes(x = region, y = cpi)) +
+  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
+  labs(title = "Consumer Price Index (CPI) by Region", x = "Region", y = "CPI") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+@fig-bxplt-cpi reveals noticeable patterns and variations across Census regions. Each region exhibits a centralized cluster of values around the median, with relatively narrow interquartile ranges, indicating that the bulk of CPI values are similar within each region. However, all regions display significant outliers. From the boxplot, we can clearly see that the overall prices in the northeast and midwest regions are comparatively higher than prices in the south and the west census regions, with the west having some of the lowest cpi values out of all the regions.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-timetrend-cpi
+#| fig-cap: "Temporal Variations in the Consumer price Index (CPI)"
+
+transformed_data <- analysis_data %>% 
+  mutate(time = time/12 + 2012) %>%
+  group_by(time) %>%
+  summarise(mean_cpi = mean(cpi, na.rm = TRUE))
+
+ggplot(transformed_data, aes(x = time, y = mean_cpi)) +
+  geom_line(color = "blue", size = 0.9) +
+  labs(title = "Trend Over Time: Consumer Price index",
+       x = "Time (in Years)",
+       y = "CPI") +
+  geom_smooth(method = "loess", color = "red", se = FALSE) +
+  theme_minimal()
+
+``` 
+
+
 
 
 # Model details {#sec-model-details}
