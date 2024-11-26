@@ -252,6 +252,9 @@ kable(summary_stats_outcome)
 
 @tbl-pvolsumm illustrates the normalization of the variable with mean as 0 and standard deviation as 1. The minimum and maximum values of -0.736 and 4.266, respectively, highlight the presence of extreme values or outliers on the right side. The median of -0.444 indicates that there might be a slight right skew in the data. @fig-hist-pvol also shows a high spread in the data and a heavily right-skewed histogram that accurately represent the expected purchasing trends, with most purchasing volumes being at the lower end and then becoming lesser and lesser as one goes right.
 
+\newpage
+
+
 ```{r}
 #| echo: false
 #| eval: true
@@ -260,7 +263,7 @@ kable(summary_stats_outcome)
 #| label: fig-hist-pvol
 #| fig-cap: "Distribution of Purchase Volume of Groceries"
 
-# Histogram for cpi values
+# Histogram for purchase volume values
 
 ggplot(analysis_data, aes(x = purchaseVolume)) +
   geom_histogram(bins = 100, fill = "blue", alpha = 0.7, color = "black") +
@@ -269,35 +272,76 @@ ggplot(analysis_data, aes(x = purchaseVolume)) +
 
 ```
 
+
 More details and exploratory analysis about the purchaseVolume variable can be found in [Appendix -@sec-data-details]
+
 
 # Model {#sec-model}
 
-The goal of our modelling strategy is twofold. Firstly,...
-
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+In order to predict price trends, we use a Bayesian Hierarchical Model (BHM) with ARIMA components to address the hierarchical structure of the data as well as to account for time-series dynamics.
 
 ## Model set-up
 
-<!-- Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.   -->
+Let $y_{ijt}$ denote the log-transformed unit value (unitValue_lg) for region $i$, category $j$ and time $t$. Then, the model can be written as:
 
-<!-- \begin{align}  -->
-<!-- y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\ -->
-<!-- \mu_i &= \alpha + \beta_i + \gamma_i\\ -->
-<!-- \alpha &\sim \mbox{Normal}(0, 2.5) \\ -->
-<!-- \beta &\sim \mbox{Normal}(0, 2.5) \\ -->
-<!-- \gamma &\sim \mbox{Normal}(0, 2.5) \\ -->
-<!-- \sigma &\sim \mbox{Exponential}(1) -->
-<!-- \end{align} -->
+$$y_{ijt} = \beta_0 + \beta^{region}_i + \beta^{category}_j + \beta_1.CPI_{ijt} + \beta_2.purchaseVolume_{ijt} + \phi.y_{ij(t-1)} + \epsilon_{ijt}$$
 
-<!-- We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`. -->
+Where:
+
+- $\beta_0$: Global intercept (average log unit value across all regions and categories).
+
+- $\beta^{region}_i$: Random effect for region $i$, capturing region-specific deviations.
+
+- $\beta^{category}_j$: Random effect for category $j$, capturing category-specific deviations.
+
+- $\beta_1$: Coefficient for the CPI predictor.
+
+- $\beta_2$: Coefficient for the purchaseVolume predictor.
+
+- $\phi$: AR(1) term capturing temporal autocorrelation. More information about the AR(1) model can be found in [Appendix -@sec-model-details].
+
+- $\epsilon_{ijt} \sim N(0, \sigma^2)$: Residual Error
+
+
+We use the following heirarchical priors for our model:
+
+- $\beta_0 \sim N(0, 10^2)$: Weakly informative prior for the global intercept.
+
+- $\beta^{region}_i \sim N(0, \sigma^2_{region})$: Region-level random effects.
+
+- $\beta^{category}_j \sim N(0, \sigma^2_{category})$: Category-level random effects.
+
+- $\beta_1, \beta_2 \sim N(0, 10^2)$: Weakly informative priors for the predictors
+
+- $\phi \sim N(0,1)$: Prior for the AR(1) term, constrained to [-1, 1] to ensure stationarity.
+
+- $\sigma^2, \sigma^2_{region}, \sigma^2_{category} \sim HalfCauchy(0,5)$: Priors for variance components.
+
+
+We run the model in R [@citeR] using the `brms` package of @cite-brms.
 
 
 ### Model justification
 
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
+The prediction of long-term trends in the outcome variable, log-transformed unit value (unitValue_lg), requires a model that can effectively handle complex data structures and temporal dynamics. We use a Bayesian Hierarchical Model (BHM) since the dataset has a natural hierarchical structure with regions and food categories as grouping factors. BHM can model the variability within regions and categories while borrowing strength across these groups through partial pooling. This approach improves predictive accuracy, by allowing group members to have some influence over one another. The data spans multiple years and involves time-dependent variations influenced by economic factors, purchase volumes, and Consumer Price Index (CPI). BHM with ARIMA components explicitly accounts for time-series dynamics such as autocorrelation, seasonality, and trends, making it suitable for long-term forecasting.
 
-We can use maths by including latex between dollar signs, for instance $\theta$.
+Background details and diagnostics are included in [Appendix -@sec-model-details].
+
+**Underlying Assumptions:**
+
+1. **Hierarchical Structure Validity**: The assumption that regions and categories introduce random effects is reasonable given the heterogeneity in geographic and product-specific dynamics. The assumption is based on the nested nature of the data, where observations are grouped by region and food categories. This reflects real-world dynamics, as food prices are influenced by regional economic conditions (e.g., supply chain logistics, local taxes) and category-specific factors (e.g., perishability, demand patterns). By introducing random effects for regions and categories, the model captures these unobserved heterogeneities effectively. For example, the average price trend in one region may systematically differ from others, and this variation is modeled through the random intercepts. Without this hierarchical framework, the model would risk oversimplifying the underlying relationships, potentially leading to biased estimates and less reliable predictions.
+
+2. **Stationarity in ARIMA**: The AR(1) component in the BHM assumes that temporal patterns in food prices exhibit stationarity, meaning that the statistical properties (e.g., mean and variance) of the time series remain constant over time. This assumption is critical for reliable temporal modeling. In the context of the F-MAP dataset, inflationary trends and seasonality might initially violate stationarity. However, incorporating CPI as a covariate effectively accounts for inflation, stabilizing the time series and justifying the stationarity assumption. To validate this assumption, the model includes preprocessing steps like log transformation of prices and detrending through CPI adjustments. Additionally, the Bayesian framework offers flexibility to model deviations from strict stationarity by allowing for probabilistic uncertainty in the AR(1) coefficient. This enables the ARIMA component to adapt to small deviations in temporal dependencies, ensuring robust temporal predictions without overly rigid constraints.
+
+3. **Normality of Residuals**: The BHM with ARIMA assumes that the residuals (differences between observed and predicted values) are normally distributed. This assumption underpins the use of Gaussian likelihoods in Bayesian modeling and ensures that the posterior distributions are well-defined and interpretable. Normality of residuals implies that the model captures all systematic patterns in the data, leaving random noise as the primary unexplained variation. Posterior predictive checks are used to validate this assumption, comparing the observed data distribution with the model-predicted posterior distributions. If deviations from normality are detected (e.g., skewness or heavy tails), adjustments such as alternative likelihoods (e.g., Student-t distributions) can be incorporated. The normality assumption is reasonable here because the dataset represents aggregated measures (e.g., regional or category-specific prices), which tend to exhibit normal-like properties due to the Central Limit Theorem.
+
+**Limitations:**
+
+1. **Non-stationarity**: Non-stationarity in the time-series data can pose significant challenges for the ARIMA component of the Bayesian hierarchical model. While including the Consumer Price Index (CPI) helps detrend and stabilize the series by accounting for inflationary effects, other non-stationary elements, such as long-term shifts in consumer preferences, technological advances, or policy changes, may remain unaddressed. If such trends or structural breaks persist in the data, they can undermine the predictive capacity of the ARIMA model, resulting in inaccurate forecasts. This limitation emphasizes the need for rigorous pre-modeling diagnostics to detect non-stationary patterns and consider more complex methods, such as regime-switching models, if necessary.
+ 
+2. **Limited Explanatory Variables**: The model incorporates CPI and purchase volume as key predictors, which are useful but may not fully capture the multifaceted nature of food price dynamics. External factors such as supply chain disruptions, climatic events, or geopolitical influences on agriculture could significantly impact prices yet remain unaccounted for in the model. The exclusion of such variables may lead to omitted variable bias, where the model attributes unexplained variability to random effects rather than systematic external factors. Expanding the set of predictors to include weather patterns, fuel prices, or global trade indices could enhance the model’s comprehensiveness and accuracy, albeit at the cost of increased complexity.
+
+3. **Computational Complexity**: Bayesian hierarchical models, especially when paired with ARIMA components, require substantial computational resources due to their iterative sampling-based inference methods, such as Markov Chain Monte Carlo (MCMC). While modern software like brms in R or PyStan in Python facilitates these computations, running the model on large datasets with multiple hierarchical levels can still be time-intensive and hardware-dependent. This limitation might restrict the ability to conduct extensive sensitivity analyses or real-time updates. Additionally, ensuring model convergence requires careful tuning and monitoring, which demands expertise and can prolong the modeling process. Despite these challenges, the benefits of Bayesian methods—such as flexibility and probabilistic interpretation—often justify the computational overhead.
 
 
 # Results {#sec-result}
@@ -548,6 +592,42 @@ ggplot(transformed_data, aes(x = time, y = mean_pvol)) +
 @fig-timetrend-pvol shows notable fluctuations from 2012 to 2018, suggesting periodic variability in consumer purchasing behavior. Peaks are observed around specific intervals, likely reflecting seasonal trends (peaks usually occur during the year-end i.e. the holiday season) or external economic factors influencing consumer demand. Over time, the periodic nature of these fluctuations appears consistent, with no clear upward or downward trend, indicating that the purchase volume stabilizes around recurring patterns.
 
 # Model details {#sec-model-details}
+
+## AR(1) Model
+
+### Overview
+
+An Autoregressive (AR) Model of order 1, denoted as AR(1), is a type of time series model where the current value of the time series is linearly dependent on its immediate past value and a random noise term. Mathematically, an AR(1) model can be expressed as:
+
+$$y_t = \phi.y_{t-1} + \epsilon_t$$
+
+Where:
+
+- $y_t$: Value of the variable at time $t$.
+
+- $\phi$: The AR(1) coefficient (a scalar between -1 and 1) that captures the strength and direction of temporal autocorrelation.
+
+- $y_{t-1}$: Value of the variable at time $t-1$ (previous time step).
+
+- $\epsilon_t$: Random error or noise term at time $t$ assumed to be independently and identically distributed ($\epsilon_{ijt} \sim N(0, \sigma^2)$).
+
+The AR(1) model is suitable for time series that exhibit correlation between consecutive observations, making it useful for capturing short-term temporal dependencies.
+
+Role of the $\phi$ Term: 
+
+The $\phi$ term captures temporal autocorrelation, which is the relationship between observations at consecutive time steps. Here's what it represents:
+
+1. Positive Temporal Correlation ($\phi > 0$): If $\phi > 0$, then the current value $y_t$ tends to be similar to $y_{t-1}$
+
+2. Negative Temporal Correlation ($\phi < 0$): If $\phi < 0$, then the current value $y_t$ tends to move in the opposite direction of $y_{t-1}$
+
+3. No Temporal Correlation ($\phi = 0$): If $\phi = 0$, then there is no dependence between $y_t$ and $y_{t-1}$
+
+### Integrating AR(1) into BHM
+
+In a Bayesian Hierarchical Model (BHM), the ARIMA components (Autoregressive Integrated Moving Average) are implemented as part of the time-series modeling within the hierarchical framework. Here’s how the ARIMA(1,0,0) model (which is just AR(1)) might be integrated:
+
+
 
 ## Posterior predictive check
 
