@@ -38,11 +38,49 @@ The remainder of this paper is structured as follows: @sec-data discusses the da
 
 # Data {#sec-data}
 
-## Overview
+## Source and Coverage
+
+The Food-at-Home Monthly Area Prices (F-MAP) data product [@USDA_FMAP] is a comprehensive and detailed data product developed by the USDA Economic Research Service (ERS) that provides monthly U.S. food price data for 90 food-at-home (FAH) categories across 15 geographic areas of the United States. The dataset includes two primary price measures for each food group, geographic area, and month: (1) a mean unit value price (dollars per 100 grams) and (2) price indexes derived using advanced index formulas. These measures enable researchers to track food price trends at a granular level and compare them across geographic and temporal dimensions, while accounting for economic factors such as consumer purchasing volume, store characteristics, and inflation metrics like the Consumer Price Index (CPI). By utilizing Circana OmniMarket Core Outlets retail scanner data, the F-MAP captures detailed consumer purchasing data from over 50,000 retail stores annually, including grocery stores, supercenters, and convenience stores.
+
+The F-MAP provides data across the following dimensions:
+
+- Monthly, 2012–18
+
+- 15 geographic areas
+  - Nationally
+  - 4 Census regions: Midwest, Northeast, South, West
+  - 10 metropolitan areas: Atlanta, Boston, Chicago, Dallas, Detroit, Houston, Los Angeles, Miami, New York, and Philadelphia
+  
+- 90 ERS Food Purchase Groups (EFPGs) (Note: A full list of the 90 EFPGs and their descriptions can be found in [Appendix -@sec-data-details])
+  - 8 groups for grains
+  - 23 groups for vegetables
+  - 8 groups for fruit
+  - 8 groups for dairy and plant-based milk products
+  - 14 groups for meat and protein foods
+  - 4 groups for prepared meals, sides, and salads
+  - 25 groups for other foods
+
+For each of these month, area, and food group combinations, the F-MAP includes the following value variables:
+
+- Purchase_dollars_wtd: Total weighted sales in U.S. dollars (nominal, i.e., not adjusted for inflation)
+- Purchase_dollars_unwtd: Total unweighted sales in U.S. dollars (nominal, i.e., not adjusted for inflation)
+- Purchase_grams_wtd: Total weighted quantities in grams
+- Purchase_grams_unwtd: Total unweighted quantities in grams
+- Number_stores: Number of stores in geographic area
+- Unit_value_mean_wtd: Weighted mean unit value per 100 grams
+- Unit_value_se_wtd: Standard error of weighted mean unit value
+- Unit_value_mean_unwtd: Unweighted mean unit value per 100 grams
+- Price_index_GEKS: Weighted price index value, constructed using Gini-Eltetö-Köves-Szulc (GEKS) formula
+
+The F-MAP dataset is designed to align closely with the USDA Dietary Guidelines for Americans, facilitating research into food affordability, diet quality, and food security. Unlike other datasets, F-MAP offers monthly frequency data, making it particularly valuable for tracking short-term and seasonal trends. The dataset's hierarchical structure—spanning individual food categories, metropolitan regions, and national aggregates—supports diverse research applications. For example, it can be used to model the effects of policy interventions such as soda taxes or subsidies on dietary behavior and public health outcomes. 
+
+While other datasets such as the Bureau of Labor Statistics (BLS) Consumer Price Index (CPI) and the USDA Purchase to Plate National Average Prices (PP-NAP) provide useful insights, they fall short in capturing the comprehensive geographic and categorical detail offered by F-MAP. For instance, the CPI lacks subnational comparability across regions and provides limited food category detail, while the PP-NAP is focused on prepared foods and lacks the temporal granularity needed for trend analysis. The F-MAP dataset bridges these gaps by offering a more detailed, frequent, and regionally comparable resource.
+
+The data is available to download in .xlsx format on the [USDA Economic Research Service website](https://www.ers.usda.gov/data-products/food-at-home-monthly-area-prices/). Specifically, we use the "Food-at-Home Monthly Area Prices, 2012 to 2018" dataset for our analysis.
+
+## Data Processing and Cleaning
 
 We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
-
-Overview text
 
 ## Measurement
 	
@@ -66,7 +104,7 @@ Use sub-sub-headings for each outcome variable and feel free to combine a few in
 
 
 
-# Model
+# Model {#sec-model}
 
 The goal of our modelling strategy is twofold. Firstly,...
 
@@ -95,7 +133,7 @@ We expect a positive relationship between the size of the wings and time spent a
 We can use maths by including latex between dollar signs, for instance $\theta$.
 
 
-# Results
+# Results {#sec-result}
 
 Our results are summarized in @tbl-modelresults.
 
@@ -129,7 +167,7 @@ Our results are summarized in @tbl-modelresults.
 
 
 
-# Discussion
+# Discussion {#sec-discussion}
 
 ## First discussion point {#sec-first-point}
 
@@ -151,8 +189,9 @@ Weaknesses and next steps should also be included.
 
 # Appendix {-}
 
+# Additional data details {#sec-data-details}
 
-# Additional data details
+
 
 # Model details {#sec-model-details}
 
@@ -204,7 +243,6 @@ In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. Th
 # plot(first_model, "rhat")
 ```
 
-# Appendix
 
 Please include an Appendix where you focus on an aspect of surveys, sampling or observational data, related to your paper. This should be an in-depth exploration, akin to the “idealized methodology/survey/pollster methodology” sections of Paper 2. Some aspect of this is likely covered in the Measurement sub-section of your Data section, but this Appendix would be much more detailed, and might include aspects like simulation, links to the literature, explorations and comparisons, among other aspects.
 
