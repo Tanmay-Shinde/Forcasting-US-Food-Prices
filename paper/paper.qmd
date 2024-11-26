@@ -80,7 +80,10 @@ The data is available to download in .xlsx format on the [USDA Economic Research
 
 ## Data Processing and Cleaning
 
-We use the statistical programming language R [@citeR].... Our data [@USDA_FMAP].... Following @tellingstories, we consider...
+We use the statistical programming language R [@citeR] to clean the data using various helpful packages like, readxl [@cite-readxl], dplyr [@cite-dplyr], tidyr [@cite-tidyr], lubridate [@cite-lubridate], and arrow [@cite-arrow].
+
+The initial step involved removing unnecessary variables, retaining only those essential for analysis. This included variables such as unit_value_mean_wtd (weighted unit value), purchase_grams_wtd (weighted purchase volume), price_index_GEKS (Consumer Price Index), EFPG (food category), metroregion_name (region), and time. Rows containing missing values in any of the key variables were removed to maintain data integrity. The dependent variable, unitValue, was log-transformed to stabilize variance and linearize relationships, to ensure no assumptions are violations in modelling. The time variable, originally in year-month format, was converted into a continuous variable representing the number of months since January 2012. This allows temporal trends to be modeled effectively as a continuous variable. Categorical variables such as region and category were standardized and converted into factor variables, enabling the model to treat them as categorical inputs. To improve the convergence of the Bayesian model, predictors such as cpi and purchaseVolume were normalized by centering them around zero and scaling them to have a standard deviation of one.
+
 
 ## Measurement
 	
