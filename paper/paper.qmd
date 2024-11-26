@@ -38,7 +38,7 @@ The remainder of this paper is structured as follows: @sec-data discusses the da
 
 # Data {#sec-data}
 
-## Source and Coverage
+## Source and Overview
 
 The Food-at-Home Monthly Area Prices (F-MAP) data product [@USDA_FMAP] is a comprehensive and detailed data product developed by the USDA Economic Research Service (ERS) that provides monthly U.S. food price data for 90 food-at-home (FAH) categories across 15 geographic areas of the United States. The dataset includes two primary price measures for each food group, geographic area, and month: (1) a mean unit value price (dollars per 100 grams) and (2) price indexes derived using advanced index formulas. These measures enable researchers to track food price trends at a granular level and compare them across geographic and temporal dimensions, while accounting for economic factors such as consumer purchasing volume, store characteristics, and inflation metrics like the Consumer Price Index (CPI). By utilizing Circana OmniMarket Core Outlets retail scanner data, the F-MAP captures detailed consumer purchasing data from over 50,000 retail stores annually, including grocery stores, supercenters, and convenience stores.
 
@@ -51,7 +51,7 @@ The F-MAP provides data across the following dimensions:
   - 4 Census regions: Midwest, Northeast, South, West
   - 10 metropolitan areas: Atlanta, Boston, Chicago, Dallas, Detroit, Houston, Los Angeles, Miami, New York, and Philadelphia
   
-- 90 ERS Food Purchase Groups (EFPGs) (Note: A full list of the 90 EFPGs and their descriptions can be found in [Appendix -@sec-data-details])
+- 90 ERS Food Purchase Groups (EFPGs)
   - 8 groups for grains
   - 23 groups for vegetables
   - 8 groups for fruit
@@ -201,6 +201,40 @@ Weaknesses and next steps should also be included.
 
 # Additional data details {#sec-data-details}
 
+## Measurement
+
+This section describes the methods for constructing the price measures in the F-MAP.
+
+**Data Preparation**
+The process to prepare the datasets for creating the F-MAP data product are as follows:
+
+1. The retail scanner data report sales on a weekly basis. Weekly sales are grouped into the respective months that the sales occurred. In cases where the week straddles 2 months, sales units and values are allocated proportionately based on the number of days in each month.
+2. Unit value outliers are eliminated using the interquartile range (IQR) method. The IQR is the difference between the 25th and 75th percentiles of the price distribution, in this case across all unit values by store and week for each item. A unit value is considered an outlier if the value is below the 25th percentile minus 1.5 multiplied by the IQR or above the 75th percentile plus 1.5 multiplied by the IQR.
+3. The weights of each package are converted into grams to calculate unit values on a per 100-gram basis:
+  a. Convert from ounces: gram weight = 28.35 x ounces per package
+  b. Convert from pounds: gram weight = 28.35 x 16 x pounds per package
+  c. Convert from fluid ounces: gram weight = 29.57 x fluid ounces per package
+  
+4. Individual food items sold in the scanner data (about 600,000 per year) are identified and categorized into 90 food groups, based on the EFPG classification system.
+5. Retailer Marketing Area (RMA) sales data are disaggregated to individual stores. In the retail scanner data, most retailers release data by individual store location. However, some retailers only release data by RMA, a grouping of stores in a retailer-defined geographical area. To disaggregate the RMA sales data to individual stores, the RMA sales data are proportioned to individual stores based on the store sales values in the store-level weight files developed for the retail scanner data. For more information about the store weights, see the Using Proprietary Data page.
+6. Store-level survey weights are applied to each store. Stores in the retail scanner data are not a representative sample of stores, and store-level weights adjust the sales data to be representative of the population of stores nationally and for each geographic area in the F-MAP. In the F-MAP datasets, unit values are provided as both weighted and unweighted estimates, and the price indexes were calculated using weighted data.
+
+**Unit Values**
+Sales (in U.S. dollars) and quantity (in grams) are summed over each month, EFPG, and geographic area. Mean unit values in the F-MAP are calculated by dividing the food group sales by the food group quantity and are standardized to the price per 100 grams. This process is completed as follows: (1) calculate the total purchase values in dollars and in grams for each EFPG in a given month and geographic area, weighted by the store weight for that year of data (note, weight is 1 for unweighted estimates); and (2) divide the total (weighted or unweighted) purchase dollars by the total (weighted or unweighted) grams to get the unit price.
+The F-MAP also includes standard errors for the weighted unit values. Standard errors are a measure of the precision of survey estimates and can be used to construct confidence intervals for an estimate. Confidence intervals represent a range of values that are likely to include the actual population mean. Standard errors of the weighted unit values are calculated by re-estimating the weighted unit values 200 times, using replicate weights, and then using the general formula for standard errors. These calculations are described in more detail in the Development of the Food-at-Home Monthly Area Prices Data report.
+
+**Price Indices**
+Price indexes are a unitless measure of the cost of a basket of goods and are used to measure price changes over time. A price index converts many item-level price comparisons into a single value that quantifies the overall price of the basket at a time and location relative to a base period. The base period for the F-MAP is the national average for each EFPG from 2016 through 2018. Index values lower than 1 indicate prices lower than the national average from 2016 through 2018, while index values higher than 1 indicate prices higher than the national average from 2016 through 2018.
+
+The primary F-MAP price index is constructed using a weighted GEKS index formula (named for contributors Gini, Eltetö, Köves, and Szulc). GEKS is a multilateral price index specifically designed to compare prices over time and space. A GEKS index can also be extended for future years without revising the index numbers that have already been published. A GEKS price index is available for all years of the F-MAP (2012–18). A set of supplemental indexes is also available for 2016–18 as a research series, which includes the bilateral Laspeyres, Paasche, Törnqvist, Fisher Ideal indexes and the multilateral Caves-Christensen-Diewert (CCD) index.
+
+Multilateral price indexes are transitive, which means that any month-area pairing (or entity) can be compared directly with another pairing or through a third pairing, and the ratio between any two pairings is independent of the choice of base period. Transitive indexes are advantageous if the mix of goods being measured is dynamic; that is, if the basket of goods changes due to product turnover. Indexes based on scanner data are dynamic because the indexes include all goods sold in stores, which may change in each time period, rather than a sample of goods selected through a survey. Indexes that are transitive also allow spatial comparisons, regardless of the choice of area used for the base.
+
+As additional years of price data become available beyond the base period, the GEKS index can be updated using a rolling window, or the time period over which the index is calculated. In standard multilateral indexes, as new data become available beyond the initial base period, the index numbers for existing entities must be recalculated because the multilateral index compares product prices in an entity with prices in all other entities. A rolling-window GEKS index compares product prices in a new entity with prices of entities within a rolling window. The F-MAP GEKS uses a 1-year rolling window, which allows maintaining published indexes without revising historical numbers.
+
+Bilateral indexes with a fixed base period can become less representative of the cost of food as the indexes move further away from the base, due to the effects of product turnover, as products are discontinued and new products are introduced. Although bilateral price indexes can be updated using chained indexes, which capture product substitution, chained indexes are subject to drifting. Chain drift is a phenomenon in which the price index drifts lower even as item-level prices return to their base levels. Multilateral indexes are fully transitive and free of chain drift. While chain drift is possible in rolling-window multilateral indexes, if a wide window length is chosen, the rolling-window index will be largely free of drift despite not being fully transitive. The 1-year rolling window used in the F-MAP GEKS has been found to be sufficient to remove chain drift caused by high-frequency data and seasonal variation in variety.
+
+The GEKS index builds upon bilateral indexes as elements. The multilateral GEKS index is the geometric mean of all possible Fisher Ideal index month-area pairings. The Fisher Ideal index is, in turn, based on the geometric mean of the Laspeyres and Paasche indexes. Therefore, constructing a GEKS index requires first calculating Laspeyres, Paasche, and Fisher Ideal indexes. We avoid going into deeper details of the above indices as the math gets extremely complicated. For more information about the construction of the F-MAP GEKS, the rolling-window GEKS, and the five supplemental indexes (i.e., Laspeyres, Paasche, Törnqvist, Fisher Ideal, and Caves-Christensen-Diewert (CCD)), you can refer to ERS’s report on the F-MAP methods. [@Sweitzer2024]
 
 
 # Model details {#sec-model-details}
