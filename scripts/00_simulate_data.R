@@ -28,7 +28,7 @@ categories <- c("Grains", "Fruits", "Vegetables", "Dairy", "Meats", "Salads", "O
 time <- rep(0:83, times = 28)
 
 # Normalized CPI values - expected to follow a normal distribution
-cpi <- rnorm(2352, mean = 0, sd = 0.5)
+cpi <- rnorm(2352, mean = 0, sd = 0.4)
 
 # Purchase Volume - expected to be more concentrated around lower values - follows a exponentional distribution
 pvol <- rexp(2352, rate = 1.5)
