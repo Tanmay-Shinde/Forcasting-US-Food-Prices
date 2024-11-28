@@ -6,7 +6,7 @@ author:
 thanks: "TODO - CHANGE THE LINK - Code and data are available at: [https://github.com/Tanmay-Shinde/Week10Reflection](https://github.com/Tanmay-Shinde/Week10Reflection)."
 date: today
 date-format: long
-abstract: "This paper examines how regional and temporal variations influence food-at-home prices across the United States, and the impact of economic factors such as purchase volume, food categories, and the Consumer Price Index (CPI) on these trends. --- The analysis reveals that while food prices have generally increased iver time, certain categories, such as dairy, fresh produce, and meats, tend to exhibit greater volatility. Factors such as purchase volume, food categories, and the CPI have a considerable influence on these price trends. Notably, higher CPI values correlate with increased food prices, and food categories with higher demand or limited supply exhibit more substantial price fluctuations --- . These findings provide actionable insights for policymakers and stakeholders in food economics, emphasizing the impact of region-specific market conditions and consumer purchasing behaviors on food pricing trends."
+abstract: "This paper focuses on building an accurate and reliable model to explore the temporal dynamics of food-at-home prices in the United States at a national level. By incorporating key economic factors such as purchase volume, food categories, and the Consumer Price Index (CPI), our Bayesian Hierarchical Model (BHM) achieves high predictive accuracy (RMSE = X) and effectively forecasts price trends. The study captures category-specific effects and temporal trends, leveraging historical data to predict future price trajectories. **Results reveal that food prices exhibit a general upward trend, with volatility concentrated in categories like dairy and fresh produce. The CPI emerges as a primary driver, strongly correlating with price increases.** Our model will provide policymakers, businesses, and researchers with a robust predictive framework to anticipate market dynamics, mitigate risks, and make data-driven decisions that enhance economic resilience and consumer well-being."
 format: pdf
 number-sections: true
 toc: true
@@ -18,10 +18,16 @@ bibliography: references.bib
 #| warning: false
 #| message: false
 
+#install.packages("broom.mixed")
 library(knitr)
 library(ggplot2)
 library(dplyr)
 library(arrow)
+library(rstanarm)
+library(modelsummary)
+library(brms)
+library(broom.mixed)
+library(kableExtra)
 
 analysis_data <- read_parquet("../data/analysis_data/analysis_data.parquet")
 
@@ -32,9 +38,9 @@ analysis_data <- read_parquet("../data/analysis_data/analysis_data.parquet")
 
 Food prices are a critical component of economic and social well-being, directly affecting food security, diet quality, and household expenditures. The Food-at-Home Monthly Area Prices (F-MAP) dataset, developed by the USDA Economic Research Service, offers detailed insights into food pricing trends across the United States. Covering the years 2012 to 2018, the dataset provides monthly price data for 90 food categories across 15 geographic areas, making it a valuable resource for understanding regional and temporal variations in food costs. This paper leverages the F-MAP data to analyze how regional disparities and time-based trends influence food-at-home prices and explores the role of economic factors such as purchase volume, food categories, and the Consumer Price Index (CPI) in shaping these patterns.
 
-The primary focus of this analysis is to estimate how regional differences, food categories, and time affect food prices in the U.S. The estimand is the expected food price for a given food category, time period, and region, conditional on factors such as purchase volume and CPI. By modeling these variations, we aim to uncover the drivers of price changes and predict trends in food costs.
+The primary focus of this analysis is to estimate how food categories, various economic factors, and time affect overall national food prices in the U.S. The estimand is the expected food price for a given food category and time period, conditional on factors such as purchase volume and CPI. By modeling these variations, we aim to uncover the drivers of price changes and predict trends in food costs.
 
-Using a Bayesian hierarchical model, this study analyzes monthly price data from the F-MAP dataset to uncover the drivers of food price variations. The model incorporates random effects to capture regional disparities and fixed effects to analyze the impact of economic factors, such as CPI, purchase volume, and food categories, on price trends. The analysis also highlights categories with greater price volatility and quantifies the influence of these factors on regional and national pricing dynamics. The findings reveal that food prices have generally increased over time, with categories like dairy, fresh produce, and meats experiencing higher price volatility. Economic factors such as purchase volume, food categories, and CPI significantly influence these trends, with higher CPI values strongly correlating with increased prices. Furthermore, food categories with higher demand or limited supply exhibit more substantial price fluctuations, underscoring the importance of understanding market-specific dynamics.
+Using a Bayesian hierarchical model, this study analyzes monthly price data from the F-MAP dataset to uncover the drivers of food price variations. The model incorporates random effects to capture categorical disparities and fixed effects to analyze the impact of economic factors, such as CPI, purchase volume, and food categories, on price trends. The analysis also highlights categories with greater price volatility and quantifies the influence of these factors on national pricing dynamics. **The findings reveal that food prices have generally increased over time, with categories like dairy, fresh produce, and meats experiencing higher price volatility.** Economic factors such as purchase volume, food categories, and CPI significantly influence these trends, with higher CPI values strongly correlating with increased prices. Furthermore, food categories with higher demand or limited supply exhibit more substantial price fluctuations, underscoring the importance of understanding market-specific dynamics.
 
 Understanding food pricing trends is essential for addressing issues related to food affordability and access. These insights are particularly valuable for policymakers and stakeholders aiming to reduce regional disparities, promote equitable access to food, and mitigate the effects of inflation on low-income households. By analyzing the drivers of price variations, this study provides a framework for informed decision-making in food policy and economic planning.
 
@@ -87,7 +93,7 @@ The data is available to download in .xlsx format on the [USDA Economic Research
 
 We use the statistical programming language R [@citeR] to clean the data using various helpful packages like, readxl [@cite-readxl], dplyr [@cite-dplyr], tidyr [@cite-tidyr], lubridate [@cite-lubridate], and arrow [@cite-arrow]. Further, libraries like ggplot2 [@cite-gg], knitr [@cite-knitr] were used to analyze the data and create visualizations.
 
-The initial step involved removing unnecessary variables, retaining only those essential for analysis. This included variables such as unit_value_mean_wtd (weighted unit value), purchase_grams_wtd (weighted purchase volume), price_index_GEKS (Consumer Price Index), EFPG (food category), metroregion_name (region), and time. Rows containing missing values in any of the key variables were removed to maintain data integrity. The dependent variable, unitValue, was log-transformed to stabilize variance and linearize relationships, to ensure no assumptions are violations in modelling. The time variable, originally in year-month format, was converted into a continuous variable representing the number of months since January 2012. This allows temporal trends to be modeled effectively as a continuous variable. Categorical variables such as region and category were standardized and converted into factor variables, enabling the model to treat them as categorical inputs. To improve the convergence of the Bayesian model, predictors such as cpi and purchaseVolume were normalized by centering them around zero and scaling them to have a standard deviation of one.
+The initial step involved removing unnecessary variables, retaining only those essential for analysis. This included variables such as unit_value_mean_wtd (weighted unit value), purchase_grams_wtd (weighted purchase volume), price_index_GEKS (Consumer Price Index), EFPG (food category), metroregion_name (region), and time. Rows containing missing values in any of the key variables were removed to maintain data integrity. We also filter the data to only include the national-level data, since we want to capture price trends at a national level. The dependent variable, unitValue, was log-transformed to stabilize variance and linearize relationships, to ensure no assumptions are violations in modelling. The time variable, originally in year-month format, was converted into a continuous variable representing the number of months since January 2012. This allows temporal trends to be modeled effectively as a continuous variable. The category variable was standardized and converted into factor variables, enabling the model to treat them as categorical inputs. To improve the convergence of the Bayesian model, predictors such as cpi and purchaseVolume were normalized by centering them around zero and scaling them to have a standard deviation of one.
 
 
 ## Measurement
@@ -166,7 +172,7 @@ It is a categorical variable representing the 90 ERS Food Purchase Groups (EFPGs
 
 ### Region
 
-The region variable represents 15 geographic regions (10 metropolitan areas and 4 Census regions and 1 National category). the region variable will help us analyze the regional and geographical trends and variations in food prices
+The region variable represents 15 geographic regions (10 metropolitan areas and 4 Census regions and 1 National category). the region variable will help us analyze the regional and geographical trends and variations in food prices. We are only interested in the 'National' region data for this study.
 
 For each of these time, region, and food group combinations, the F-MAP includes the following value variables:
 
@@ -278,27 +284,35 @@ More details and exploratory analysis about the purchaseVolume variable can be f
 
 # Model {#sec-model}
 
-In order to predict price trends, we use a Bayesian Hierarchical Model (BHM) with ARIMA components to address the hierarchical structure of the data as well as to account for time-series dynamics.
+We employ a Bayesian Hierarchical Model (BHM) in this study to capture the complex relationships between food-at-home prices and their predictors, such as purchase volume, food categories, the Consumer Price Index (CPI), and time. The hierarchical structure allows the model to account for variability across different food categories while leveraging the overall data trends at the national level. By including time as a predictor, the model effectively captures temporal trends, while predictors like CPI and purchase volume elucidate economic and consumer-driven influences on prices.
 
-## Model set-up
+## Overview
 
-Let $y_{ijt}$ denote the log-transformed unit value (unitValue_lg) for region $i$, category $j$ and time $t$. Then, the model can be written as:
+The outcome variable is **unitValue_lg**, which represents the log of weighted mean price per 100 grams of a food item within a specific food category and time period. he log-transformation stabilizes variance and helps handle skewness in the price distribution, ensuring that the Gaussian family used in the model is appropriate.
 
-$$y_{ijt} = \beta_0 + \beta^{region}_i + \beta^{category}_j + \beta_1.CPI_{ijt} + \beta_2.purchaseVolume_{ijt} + \phi.y_{ij(t-1)} + \epsilon_{ijt}$$
+**cpi**, **purchaseVolume**, and **time** are treated as fixed effects predictors. CPI models the overall inflationary trends and their influence on food prices. It is a continuous variable that captures macroeconomic factors affecting food price levels. Purchase Volume represents the total weighted quantity of food purchased. It acts as a demand-side predictor, reflecting consumer purchasing behavior's effect on price trends. Time is continuous variable representing the time elapsed since January 2012. It models the temporal trend in food prices, allowing the capture of long-term changes over time.
+
+**category** captures variability in price trends across different food categories. By converting this variable to a factor, we allow each food category to have its own baseline price level while maintaining the overall hierarchical structure of the model.
+
+To train the model, we use data from the year 2012 to 2017, and use the 2018 data as a benchmark to test the predictive accuracy of the model.
+
+## Model Specifications
+
+Let $y_{ijt}$ denote the log-transformed unit value (unitValue_lg) for category $i$ and time $t$. Then, the model can be written as:
+
+$$y_{it} = \beta_0 + \beta^{category}_i + \beta_1.CPI_{it} + \beta_2.purchaseVolume_{it} + \beta_3.time + \epsilon_{it}$$
 
 Where:
 
 - $\beta_0$: Global intercept (average log unit value across all regions and categories).
 
-- $\beta^{region}_i$: Random effect for region $i$, capturing region-specific deviations.
-
-- $\beta^{category}_j$: Random effect for category $j$, capturing category-specific deviations.
+- $\beta^{category}_j$: Random effect for category $i$, capturing category-specific deviations.
 
 - $\beta_1$: Coefficient for the CPI predictor.
 
 - $\beta_2$: Coefficient for the purchaseVolume predictor.
 
-- $\phi$: AR(1) term capturing temporal autocorrelation. More information about the AR(1) model can be found in [Appendix -@sec-model-details].
+- $\beta_3$: Coefficient for the time variable.
 
 - $\epsilon_{ijt} \sim N(0, \sigma^2)$: Residual Error
 
@@ -307,46 +321,121 @@ We use the following heirarchical priors for our model:
 
 - $\beta_0 \sim N(0, 10^2)$: Weakly informative prior for the global intercept.
 
-- $\beta^{region}_i \sim N(0, \sigma^2_{region})$: Region-level random effects.
-
 - $\beta^{category}_j \sim N(0, \sigma^2_{category})$: Category-level random effects.
 
-- $\beta_1, \beta_2 \sim N(0, 10^2)$: Weakly informative priors for the predictors
+- $\beta_1, \beta_2, \beta_3 \sim N(0, 10^2)$: Weakly informative priors for the predictors
 
-- $\phi \sim N(0,1)$: Prior for the AR(1) term, constrained to [-1, 1] to ensure stationarity.
-
-- $\sigma^2, \sigma^2_{region}, \sigma^2_{category} \sim HalfCauchy(0,5)$: Priors for variance components.
+- $\sigma^2_{category} \sim HalfCauchy(0,5)$: Priors for variance components.
 
 
 We run the model in R [@citeR] using the `brms` package of @cite-brms.
 
 
-### Model justification
+### Model Justification
 
-The prediction of long-term trends in the outcome variable, log-transformed unit value (unitValue_lg), requires a model that can effectively handle complex data structures and temporal dynamics. We use a Bayesian Hierarchical Model (BHM) since the dataset has a natural hierarchical structure with regions and food categories as grouping factors. BHM can model the variability within regions and categories while borrowing strength across these groups through partial pooling. This approach improves predictive accuracy, by allowing group members to have some influence over one another. The data spans multiple years and involves time-dependent variations influenced by economic factors, purchase volumes, and Consumer Price Index (CPI). BHM with ARIMA components explicitly accounts for time-series dynamics such as autocorrelation, seasonality, and trends, making it suitable for long-term forecasting.
+The prediction of long-term trends in the outcome variable, log-transformed unit value (unitValue_lg), requires a model that can effectively handle complex data structures and temporal dynamics. We use a Bayesian Hierarchical Model (BHM) since the dataset has a natural hierarchical structure with food categories as grouping factors. BHM can model the variability within categories while borrowing strength across these groups through partial pooling. This approach improves predictive accuracy, by allowing group members to have some influence over one another. The data spans multiple years and involves time-dependent variations influenced by economic factors, purchase volumes, and Consumer Price Index (CPI). 
 
-Background details and diagnostics are included in [Appendix -@sec-model-details].
+We facilitate out-of-sample testing by dividing the dataset into two distinct, non-overlapping temporal segments: a training set (2012–2017) and a testing set (2018). The training set is used to build and calibrate the Bayesian Hierarchical Model (BHM), leveraging historical patterns in food prices, consumer purchasing volume, and other predictors like the Consumer Price Index (CPI). The testing set, comprising data exclusively from 2018, remains untouched during the model training phase, serving as unseen data for evaluating the model's performance.
 
 **Underlying Assumptions:**
 
-1. **Hierarchical Structure Validity**: The assumption that regions and categories introduce random effects is reasonable given the heterogeneity in geographic and product-specific dynamics. The assumption is based on the nested nature of the data, where observations are grouped by region and food categories. This reflects real-world dynamics, as food prices are influenced by regional economic conditions (e.g., supply chain logistics, local taxes) and category-specific factors (e.g., perishability, demand patterns). By introducing random effects for regions and categories, the model captures these unobserved heterogeneities effectively. For example, the average price trend in one region may systematically differ from others, and this variation is modeled through the random intercepts. Without this hierarchical framework, the model would risk oversimplifying the underlying relationships, potentially leading to biased estimates and less reliable predictions.
+1. **Hierarchical Structure Validity**: The assumption that categories introduce random effects is reasonable given the heterogeneity in geographic and product-specific dynamics. The assumption is based on the nested nature of the data, where observations are grouped by region and food categories. This reflects real-world dynamics, as food prices are influenced by category-specific factors (e.g., perishability, demand patterns). By introducing random effects for regions and categories, the model captures these unobserved heterogeneities effectively. For example, the average price trend in one region may systematically differ from others, and this variation is modeled through the random intercepts. Without this hierarchical framework, the model would risk oversimplifying the underlying relationships, potentially leading to biased estimates and less reliable predictions.
 
-2. **Stationarity in ARIMA**: The AR(1) component in the BHM assumes that temporal patterns in food prices exhibit stationarity, meaning that the statistical properties (e.g., mean and variance) of the time series remain constant over time. This assumption is critical for reliable temporal modeling. In the context of the F-MAP dataset, inflationary trends and seasonality might initially violate stationarity. However, incorporating CPI as a covariate effectively accounts for inflation, stabilizing the time series and justifying the stationarity assumption. To validate this assumption, the model includes preprocessing steps like log transformation of prices and detrending through CPI adjustments. Additionally, the Bayesian framework offers flexibility to model deviations from strict stationarity by allowing for probabilistic uncertainty in the AR(1) coefficient. This enables the ARIMA component to adapt to small deviations in temporal dependencies, ensuring robust temporal predictions without overly rigid constraints.
-
-3. **Normality of Residuals**: The BHM with ARIMA assumes that the residuals (differences between observed and predicted values) are normally distributed. This assumption underpins the use of Gaussian likelihoods in Bayesian modeling and ensures that the posterior distributions are well-defined and interpretable. Normality of residuals implies that the model captures all systematic patterns in the data, leaving random noise as the primary unexplained variation. Posterior predictive checks are used to validate this assumption, comparing the observed data distribution with the model-predicted posterior distributions. If deviations from normality are detected (e.g., skewness or heavy tails), adjustments such as alternative likelihoods (e.g., Student-t distributions) can be incorporated. The normality assumption is reasonable here because the dataset represents aggregated measures (e.g., regional or category-specific prices), which tend to exhibit normal-like properties due to the Central Limit Theorem.
+2. **Normality of Residuals**: The BHM assumes that the residuals (differences between observed and predicted values) are normally distributed. This assumption underpins the use of Gaussian likelihoods in Bayesian modeling and ensures that the posterior distributions are well-defined and interpretable. Normality of residuals implies that the model captures all systematic patterns in the data, leaving random noise as the primary unexplained variation. Posterior predictive checks are used to validate this assumption, comparing the observed data distribution with the model-predicted posterior distributions. If deviations from normality are detected (e.g., skewness or heavy tails), adjustments such as alternative likelihoods (e.g., Student-t distributions) can be incorporated. The normality assumption is reasonable here because the dataset represents aggregated measures (e.g., regional or category-specific prices), which tend to exhibit normal-like properties due to the Central Limit Theorem.
 
 **Limitations:**
 
-1. **Non-stationarity**: Non-stationarity in the time-series data can pose significant challenges for the ARIMA component of the Bayesian hierarchical model. While including the Consumer Price Index (CPI) helps detrend and stabilize the series by accounting for inflationary effects, other non-stationary elements, such as long-term shifts in consumer preferences, technological advances, or policy changes, may remain unaddressed. If such trends or structural breaks persist in the data, they can undermine the predictive capacity of the ARIMA model, resulting in inaccurate forecasts. This limitation emphasizes the need for rigorous pre-modeling diagnostics to detect non-stationary patterns and consider more complex methods, such as regime-switching models, if necessary.
- 
-2. **Limited Explanatory Variables**: The model incorporates CPI and purchase volume as key predictors, which are useful but may not fully capture the multifaceted nature of food price dynamics. External factors such as supply chain disruptions, climatic events, or geopolitical influences on agriculture could significantly impact prices yet remain unaccounted for in the model. The exclusion of such variables may lead to omitted variable bias, where the model attributes unexplained variability to random effects rather than systematic external factors. Expanding the set of predictors to include weather patterns, fuel prices, or global trade indices could enhance the model’s comprehensiveness and accuracy, albeit at the cost of increased complexity.
+1. **Limited Explanatory Variables**: The model incorporates CPI and purchase volume as key predictors, which are useful but may not fully capture the multifaceted nature of food price dynamics. External factors such as supply chain disruptions, climatic events, or geopolitical influences on agriculture could significantly impact prices yet remain unaccounted for in the model. The exclusion of such variables may lead to omitted variable bias, where the model attributes unexplained variability to random effects rather than systematic external factors. Expanding the set of predictors to include weather patterns, fuel prices, or global trade indices could enhance the model’s comprehensiveness and accuracy, albeit at the cost of increased complexity.
 
 3. **Computational Complexity**: Bayesian hierarchical models, especially when paired with ARIMA components, require substantial computational resources due to their iterative sampling-based inference methods, such as Markov Chain Monte Carlo (MCMC). While modern software like brms in R or PyStan in Python facilitates these computations, running the model on large datasets with multiple hierarchical levels can still be time-intensive and hardware-dependent. This limitation might restrict the ability to conduct extensive sensitivity analyses or real-time updates. Additionally, ensuring model convergence requires careful tuning and monitoring, which demands expertise and can prolong the modeling process. Despite these challenges, the benefits of Bayesian methods—such as flexibility and probabilistic interpretation—often justify the computational overhead.
 
 
 # Results {#sec-result}
 
-Our results are summarized in @tbl-modelresults.
+## Model Metrics
+
+The Bayesian model, presented in @tbl-modelresults1, explores the relationships between the unit value of a food item within a specific food category and predictors such as cpi, consumer purchase volumes, and time.
+
+The intercept estimate of -0.745 represents the baseline log-transformed unit value (unitValue_lg) when all predictors—Consumer Price Index (CPI), purchase volume, and time—are at their reference or mean levels. A negative intercept suggests that the baseline food-at-home prices, in log scale, are below zero, implying prices below 1 on the original scale.
+
+The CPI predictor has an estimate of 0.044, indicating that a one-unit increase in CPI leads to a 0.044 increase in the log-unit value, holding all other variables constant. This positive relationship aligns with expectations, as rising inflation levels typically correlate with increasing food prices.
+
+The purchase volume variable exhibits a negative relationship with the response, with an estimate of -0.170. This means that for every one-unit increase in normalized purchase volume, the log-unit value decreases by 0.170, holding other variables constant. This result is consistent with economic principles, reflecting economies of scale where bulk purchases reduce per-unit costs.
+
+The time variable shows a small positive effect on log-unit value, with an estimate of 0.001. This result suggests a gradual increase in food prices over time.
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: tbl-modelresults1
+#| tbl-cap: "Coefficients of Predictor Variables"
+#| warning: false
+
+model <- readRDS(file = here::here("models/bhm_model.rds"))
+
+# Extract fixed effects (regression coefficients)
+summary_df <- as.data.frame(summary(model)$fixed)
+summary_df <- summary_df[, c("Estimate", "Est.Error", "l-95% CI", "u-95% CI", "Rhat")]
+
+kable(summary_df, digits = 3, format = "markdown") %>%
+  kable_styling(full_width = FALSE)
+
+```
+
+Across all predictors—CPI, purchase volume, and time—the standard errors are small, indicating high precision in the parameter estimates. This precision is particularly evident in the case of CPI and time, where the standard errors are close to zero, signifying that the data provides strong evidence for the relationship between these variables and the log-unit value.
+
+@tbl-modelresults2 provides a clear assessment of the model's performance. With 5944 observations, the model uses a substantial dataset, enhancing the reliability of its estimates. The R² value of 0.744 shows that 74.4% of the variability in the log-transformed unit value is explained by the predictors, indicating a strong fit and relevance of variables like CPI, purchase volume, and time. An AIC of -16810.9 reflects the model's effectiveness in balancing fit and complexity. The high log-likelihood (Log.Lik.) value of 8405.5 further supports the model's ability to explain the data well. The Root Mean Square Error (RMSE) of 0.058 indicates high predictive accuracy, showing minimal difference between observed and predicted values. These metrics confirm that the model is robust and reliable for capturing trends and making future predictions.
+
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: tbl-modelresults2
+#| tbl-cap: "Explanatory model of Unit Value"
+#| warning: false
+
+# Extract basic metrics
+num_obs <- nrow(model$data)
+
+# Bayesian R² calculation
+r2 <- bayes_R2(model)
+
+# AIC and Log-Likelihood (using loo)
+loo_results <- loo(model)
+aic <- loo_results$estimates["elpd_loo", "Estimate"] * -2
+log_lik <- sum(loo_results$pointwise[, "elpd_loo"])
+
+# RMSE calculation
+predicted <- posterior_predict(model)
+mean_predictions <- colMeans(predicted)
+rmse <- sqrt(mean((model$data$unitValue_lg - mean_predictions)^2))
+
+# Model Metrics Table
+model_metrics <- data.frame(
+  Metric = c("Num.Obs.", "R²", "AIC", "Log.Lik.", "RMSE"),
+  Value = c(
+    num_obs,
+    round(mean(r2), 3),  # Bayesian R²
+    round(aic, 1),
+    round(log_lik, 1),
+    round(rmse, 3)
+  )
+)
+
+# Create a Table
+metrics_kable <- model_metrics %>%
+  kbl(caption = "Model Metrics") %>%
+  kable_styling(full_width = FALSE)
+
+# Display the Table
+print(metrics_kable)
+
+
+```
+
+## Predictions
+
+In this section, we use the model to make some predictions, to visualize and assess the accuracy of the model. As mentioned before, we the data from Jan 2018 to Dec 2018 serves as our test dataset. We will look at the model's predictions for the unit values of 5 food categories and compare them against the actual recorded values.  
 
 ```{r}
 #| echo: false
@@ -354,28 +443,164 @@ Our results are summarized in @tbl-modelresults.
 #| warning: false
 #| message: false
 
-# library(rstanarm)
+test_data <- analysis_data %>% filter(time >= 72)
 
-#first_model <- readRDS(file = here::here("models/first_model.rds"))
+future_predictions <- predict(
+  model,
+  newdata = test_data,
+  allow_new_levels = TRUE,
+  summary = TRUE
+)
+
+future_predictions <- data.frame(future_predictions)
+
+check_data <- cbind(test_data, future_predictions)
+
 ```
 
 ```{r}
 #| echo: false
 #| eval: true
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
 #| warning: false
+#| message: false
+#| label: fig-fruits-pred
+#| fig-cap: "Prediction for Whole Fruit Prices"
 
-# modelsummary::modelsummary(
-#   list(
-#     "First model" = first_model
-#   ),
-#   statistic = "mad",
-#   fmt = 2
-# )
+check_data_cat <- check_data %>% filter(category == "Whole fruit, canned")
+
+ggplot(check_data_cat, aes(x = time)) +
+geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
+geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
+labs(
+  title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
+  x = "Time",
+  y = "Value",
+  color = "Legend"
+) +
+scale_color_manual(
+  values = c("Actual Value" = "red", "Predicted Value" = "blue")
+) +
+theme_minimal()
+
 ```
 
+@fig-fruits-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for whole fruit prices during the test period (January to December 2018). 
 
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-tom-pred
+#| fig-cap: "Prediction for Canned Tomatoes Prices"
+
+check_data_cat <- check_data %>% filter(category == "Tomatoes, canned")
+
+ggplot(check_data_cat, aes(x = time)) +
+geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
+geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
+labs(
+  title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
+  x = "Time",
+  y = "Value",
+  color = "Legend"
+) +
+scale_color_manual(
+  values = c("Actual Value" = "red", "Predicted Value" = "blue")
+) +
+theme_minimal()
+
+```
+
+@fig-tom-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for tomatoes (canned) prices during the test period (January to December 2018). 
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-egg-pred
+#| fig-cap: "Prediction for Eggs and Egg Substitutes Prices"
+
+check_data_cat <- check_data %>% filter(category == "Egg and egg substitutes")
+
+ggplot(check_data_cat, aes(x = time)) +
+geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
+geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
+labs(
+  title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
+  x = "Time",
+  y = "Value",
+  color = "Legend"
+) +
+scale_color_manual(
+  values = c("Actual Value" = "red", "Predicted Value" = "blue")
+) +
+theme_minimal()
+
+```
+
+@fig-egg-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for eggs and egg substitutes prices during the test period (January to December 2018).
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-csv-pred
+#| fig-cap: "Prediction for Canned Starchy Vegetables Prices"
+
+check_data_cat <- check_data %>% filter(category == "Other starchy vegetables, canned")
+
+ggplot(check_data_cat, aes(x = time)) +
+geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
+geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
+labs(
+  title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
+  x = "Time",
+  y = "Value",
+  color = "Legend"
+) +
+scale_color_manual(
+  values = c("Actual Value" = "red", "Predicted Value" = "blue")
+) +
+theme_minimal()
+
+```
+
+@fig-csv-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for canned starchy vegetable prices during the test period (January to December 2018).
+
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-bsl-pred
+#| fig-cap: "Prediction for Bacon, Sausage, and Lunch Meat Prices"
+
+check_data_cat <- check_data %>% filter(category == "Bacon, sausage, and lunch meats")
+
+ggplot(check_data_cat, aes(x = time)) +
+geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
+geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
+labs(
+  title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
+  x = "Time",
+  y = "Value",
+  color = "Legend"
+) +
+scale_color_manual(
+  values = c("Actual Value" = "red", "Predicted Value" = "blue")
+) +
+theme_minimal()
+
+```
+@fig-bsl-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for bacon, sausage, and other lunch meat prices during the test period (January to December 2018).
+
+The predicted values for all categories closely follow the actual trend, demonstrating the model's ability to capture temporal and category-specific variations effectively. While minor deviations are visible at certain points, the overall alignment underscores the predictive accuracy of the Bayesian hierarchical model. These results validate the model's reliability in forecasting price trends, providing valuable insights for economic analysis and policy-making.
+
+Plots for all 90 categories are available in the "other/plots/" directory. The code to generate all plots is available in "scripts/05_model_data.R"
 
 
 # Discussion {#sec-discussion}
@@ -398,7 +623,7 @@ Weaknesses and next steps should also be included.
 
 \appendix
 
-# Appendix {-}
+# Appendix {#sec-appendix}
 
 # Additional data details {#sec-data-details}
 
