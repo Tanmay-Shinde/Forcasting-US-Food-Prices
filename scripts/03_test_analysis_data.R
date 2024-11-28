@@ -8,7 +8,7 @@
 # - The `tidyverse` package must be installed and loaded
 # - The 'testthat' package must be installed and loaded
 # - The arrow package must be installed and loaded
-# - 00-simulate_data.R must have been run
+# - 02_clean_data.R must have been run
 
 
 #### Workspace setup ####

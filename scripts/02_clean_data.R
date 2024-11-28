@@ -29,6 +29,8 @@ analysis_data <- fmap_data %>%
          purchaseVolume = Purchase_grams_wtd,
          unitValue = Unit_value_mean_wtd)
 
+analysis_data <- analysis_data %>% filter(region == "National")
+
 # Handling missing/null values
 analysis_data <- analysis_data %>%
   filter(!is.na(unitValue) & !is.na(cpi) & !is.na(purchaseVolume) & !is.na(region) & !is.na(category))
@@ -67,6 +69,9 @@ normalize <- function(x) {
 analysis_data <- analysis_data %>%
   mutate(cpi = normalize(cpi),
          purchaseVolume = normalize(purchaseVolume))
+
+# Scale cpi and purchaseVolume values to improve performance of BHM
+analysis_data <- analysis_data %>% mutate(cpi = scale(cpi), purchaseVolume = scale(purchaseVolume))
 
 # save as parquet file
 write_parquet(analysis_data, "../data/analysis_data/analysis_data.parquet")
