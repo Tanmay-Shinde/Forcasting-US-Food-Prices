@@ -34,6 +34,8 @@ analysis_data <- read_parquet("../data/analysis_data/analysis_data.parquet")
 ```
 
 
+
+
 # Introduction
 
 Food prices are a critical component of economic and social well-being, directly affecting food security, diet quality, and household expenditures. The Food-at-Home Monthly Area Prices (F-MAP) dataset, developed by the USDA Economic Research Service, offers detailed insights into food pricing trends across the United States. Covering the years 2012 to 2018, the dataset provides monthly price data for 90 food categories across 15 geographic areas, making it a valuable resource for understanding regional and temporal variations in food costs. This paper leverages the F-MAP data to analyze how regional disparities and time-based trends influence food-at-home prices and explores the role of economic factors such as purchase volume, food categories, and the Consumer Price Index (CPI) in shaping these patterns.
@@ -114,6 +116,8 @@ Through this rigorous process, real-world phenomena such as regional price varia
 
 The response variable, unitValue, represents the weighted mean price per 100 grams of a food item within a specific food category, geographic region, and time period. In this analysis, the variable is log-transformed to create unitValue_lg, which helps stabilize variance, improve normality, and facilitate the interpretation of model coefficients in percentage terms. The log transformation allows us to understand the proportional changes in price rather than absolute changes, which is particularly useful for identifying relative price dynamics across categories and regions.
 
+
+
 ```{r}
 #| echo: false
 #| eval: true
@@ -137,7 +141,11 @@ kable(summary_stats_outcome)
 
 ``` 
 
+
+
 From @tbl-outsumm, we can see that the transformed outcome variable, unitValue_lg, has a mean of -0.692 and a median of -0.713, indicating a near-symmetric distribution. The standard deviation of 0.687 reflects moderate variability in prices, while the range, spanning from a minimum of -2.813 to a maximum of 1.191, highlights significant disparities in food costs across categories, regions, and time periods. The log transformation normalizes the data, reducing skewness and ensuring that extreme values in the original price variable do not disproportionately influence the analysis. 
+
+
 
 ```{r}
 #| echo: false
@@ -155,6 +163,8 @@ ggplot(analysis_data, aes(x = unitValue_lg)) +
   theme_minimal()
 
 ``` 
+
+
 
 @fig-hist-out illustrates a symmetric, unimodal distribution of unitValue_lg, centered near -0.7, with values ranging from approximately -2.8 to 1.2. This indicates that most food prices cluster around the median value, with fewer extreme high or low prices.
 
@@ -182,6 +192,8 @@ The Consumer Price Index (CPI) variable in the dataset represents the weighted p
 
 Each value recorded under the CPI column represents the consumer price index of one particular food group out of the 90 EFPGs in a particular region for that month.
 
+
+
 ```{r}
 #| echo: false
 #| eval: true
@@ -205,7 +217,11 @@ kable(summary_stats_outcome)
 
 ``` 
 
+
+
 @tbl-cpisumm illustrates the normalization of the variable with mean as 0 and standard deviation as 1. The minimum and maximum values of -7.04 and 22.79, respectively, highlight the presence of extreme values or outliers. These statistics indicate notable regional or temporal differences in CPI values, reflecting the varying economic conditions or price trends across the observed time period and regions. @fig-hist-cpi also shows a spread of the data from -7 to 22, with most of the values clustered around 0 with a fairly normal distribution.
+
+
 
 
 ```{r}
@@ -227,11 +243,15 @@ ggplot(analysis_data, aes(x = cpi)) +
 
 ```
 
+
+
 More details and exploratory analysis about the cpi variable can be found in [Appendix -@sec-data-details]
 
 ### Purchase Volume
 
 The Purchase Volume variable represents the total quantity of food purchased, measured in grams, weighted by store-level survey weights to ensure representativeness across geographic areas and time. This variable is crucial in understanding consumer purchasing behavior, providing insights into the relationship between food quantity consumed and factors such as price, region, and time. It also helps in identifying demand patterns for various food categories and regions, which can influence pricing and policy decisions. High purchase volumes could indicate greater demand or accessibility, whereas lower volumes might reflect supply constraints, lower demand, or higher relative prices. This variable is key for examining the impact of economic factors like Consumer Price Index (CPI) and regional trends on consumer behavior.
+
+
 
 ```{r}
 #| echo: false
@@ -256,9 +276,13 @@ kable(summary_stats_outcome)
 
 ``` 
 
+
+
 @tbl-pvolsumm illustrates the normalization of the variable with mean as 0 and standard deviation as 1. The minimum and maximum values of -0.736 and 4.266, respectively, highlight the presence of extreme values or outliers on the right side. The median of -0.444 indicates that there might be a slight right skew in the data. @fig-hist-pvol also shows a high spread in the data and a heavily right-skewed histogram that accurately represent the expected purchasing trends, with most purchasing volumes being at the lower end and then becoming lesser and lesser as one goes right.
 
 \newpage
+
+
 
 
 ```{r}
@@ -277,6 +301,8 @@ ggplot(analysis_data, aes(x = purchaseVolume)) +
   theme_minimal()
 
 ```
+
+
 
 
 More details and exploratory analysis about the purchaseVolume variable can be found in [Appendix -@sec-data-details]
@@ -364,6 +390,8 @@ The purchase volume variable exhibits a negative relationship with the response,
 
 The time variable shows a small positive effect on log-unit value, with an estimate of 0.001. This result suggests a gradual increase in food prices over time.
 
+
+
 ```{r}
 #| echo: false
 #| eval: true
@@ -382,9 +410,13 @@ kable(summary_df, digits = 3, format = "markdown") %>%
 
 ```
 
+
+
 Across all predictors—CPI, purchase volume, and time—the standard errors are small, indicating high precision in the parameter estimates. This precision is particularly evident in the case of CPI and time, where the standard errors are close to zero, signifying that the data provides strong evidence for the relationship between these variables and the log-unit value.
 
 @tbl-modelresults2 provides a clear assessment of the model's performance. With 5944 observations, the model uses a substantial dataset, enhancing the reliability of its estimates. The R² value of 0.744 shows that 74.4% of the variability in the log-transformed unit value is explained by the predictors, indicating a strong fit and relevance of variables like CPI, purchase volume, and time. An AIC of -16810.9 reflects the model's effectiveness in balancing fit and complexity. The high log-likelihood (Log.Lik.) value of 8405.5 further supports the model's ability to explain the data well. The Root Mean Square Error (RMSE) of 0.058 indicates high predictive accuracy, showing minimal difference between observed and predicted values. These metrics confirm that the model is robust and reliable for capturing trends and making future predictions.
+
+
 
 
 ```{r}
@@ -427,9 +459,13 @@ kable(model_metrics, digits = 3, format = "markdown") %>%
 
 ```
 
+
+
 ## Predictions
 
 In this section, we use the model to make some predictions, to visualize and assess the accuracy of the model. As mentioned before, we the data from Jan 2018 to Dec 2018 serves as our test dataset. We will look at the model's predictions for the unit values of 5 food categories and compare them against the actual recorded values.  
+
+
 
 ```{r}
 #| echo: false
@@ -478,7 +514,11 @@ theme_minimal()
 
 ```
 
+
+
 @fig-fruits-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for whole fruit prices during the test period (January to December 2018). 
+
+
 
 ```{r}
 #| echo: false
@@ -506,7 +546,11 @@ theme_minimal()
 
 ```
 
+
+
 @fig-tom-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for tomatoes (canned) prices during the test period (January to December 2018). 
+
+
 
 ```{r}
 #| echo: false
@@ -534,7 +578,11 @@ theme_minimal()
 
 ```
 
+
+
 @fig-egg-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for eggs and egg substitutes prices during the test period (January to December 2018).
+
+
 
 ```{r}
 #| echo: false
@@ -562,7 +610,11 @@ theme_minimal()
 
 ```
 
+
+
 @fig-csv-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for canned starchy vegetable prices during the test period (January to December 2018).
+
+
 
 
 ```{r}
@@ -590,6 +642,8 @@ scale_color_manual(
 theme_minimal()
 
 ```
+
+
 @fig-bsl-pred visualizes the comparison between the actual and predicted log-transformed unit values (unitValue_lg) for bacon, sausage, and other lunch meat prices during the test period (January to December 2018).
 
 The predicted values for all categories closely follow the actual trend, demonstrating the model's ability to capture temporal and category-specific variations effectively. While minor deviations are visible at certain points, the overall alignment underscores the predictive accuracy of the Bayesian hierarchical model. These results validate the model's reliability in forecasting price trends, providing valuable insights for economic analysis and policy-making.
@@ -666,6 +720,8 @@ The GEKS index builds upon bilateral indexes as elements. The multilateral GEKS 
 
 ### Regional Trends
 
+
+
 ```{r}
 #| echo: false
 #| eval: true
@@ -685,9 +741,13 @@ ggplot(filtered_data, aes(x = region, y = unitValue_lg)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ``` 
+
+
 @fig-bxplt-out reveals slight regional variations in log unit values. The Northeast and West regions show marginally higher median prices compared to the Midwest and South, reflecting higher food costs often associated with coastal or urban areas. The Midwest exhibits the largest variability, including a notable outlier on the high end, suggesting either an expensive food category or a regional anomaly. Despite these differences, the overall consistency in median prices across regions highlights a broadly stable pricing structure with minor geographic deviations. These trends emphasize the need to investigate the economic and geographic factors contributing to these regional disparities.
 
 ### Temporal Trends
+
+
 
 ```{r}
 #| echo: false
@@ -711,11 +771,15 @@ ggplot(transformed_data, aes(x = time, y = mean_unitValue_lg)) +
 
 ``` 
 
+
+
 @fig-timetrend illustrates the log-transformed unit value of food prices from 2012 to 2018, revealing a general upward trend over time. Initially, from 2012 to 2014, there is only a modest increase in the log-transformed values. However, in 2014, prices increase sharply followed by a period of 3 years characterized by heightened volatility, with pronounced peaks and troughs, and another increase in the prices in 2018. Thus, the overall trajectory for the log-transformed unit value of food prices from 2012 to 2018 remains upwards.
 
 ## EDA for Predictor Variables
 
 ### CPI
+
+
 
 ```{r}
 #| echo: false
@@ -737,7 +801,11 @@ ggplot(filtered_data, aes(x = region, y = cpi)) +
 
 ```
 
+
+
 @fig-bxplt-cpi reveals noticeable patterns and variations across Census regions. Each region exhibits a centralized cluster of values around the median, with relatively narrow interquartile ranges, indicating that the bulk of CPI values are similar within each region. However, all regions display significant outliers. From the boxplot, we can clearly see that the overall prices in the northeast and midwest regions are comparatively higher than prices in the south and the west census regions, with the west having some of the lowest cpi values out of all the regions.
+
+
 
 ```{r}
 #| echo: false
@@ -761,9 +829,13 @@ ggplot(transformed_data, aes(x = time, y = mean_cpi)) +
 
 ``` 
 
+
+
 @fig-timetrend-cpi also illustrates the general upward trend in the CPI values from 2012 to 2018.
 
 ## Purchase Volume
+
+
 
 ```{r}
 #| echo: false
@@ -784,7 +856,11 @@ ggplot(filtered_data, aes(x = region, y = purchaseVolume)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
+
 From @fig-bxplt-pvol, we can see that across all regions, the mean purchase volume is relatively consistent, suggesting similar central tendencies in the amount of food purchased. However, the South exhibits a slightly higher mean and a wider interquartile range, indicating greater variability in purchase volume compared to other regions - which might be due to the lower cpi values in the South as revealed in @fig-bxplt-cpi above.
+
+
 
 ```{r}
 #| echo: false
@@ -807,6 +883,8 @@ ggplot(transformed_data, aes(x = time, y = mean_pvol)) +
   theme_minimal()
 
 ```
+
+
 
 @fig-timetrend-pvol shows notable fluctuations from 2012 to 2018, suggesting periodic variability in consumer purchasing behavior. Peaks are observed around specific intervals, likely reflecting seasonal trends (peaks usually occur during the year-end i.e. the holiday season) or external economic factors influencing consumer demand. Over time, the periodic nature of these fluctuations appears consistent, with no clear upward or downward trend, indicating that the purchase volume stabilizes around recurring patterns.
 
@@ -854,6 +932,8 @@ In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. 
 
 In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
 
+
+
 ```{r}
 #| eval: true
 #| echo: false
@@ -875,11 +955,15 @@ In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. Th
 #   coord_flip()
 ```
 
+
+
 ## Diagnostics
 
 @fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
 
 @fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
+
+
 
 ```{r}
 #| echo: false
@@ -897,6 +981,8 @@ In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. Th
 ```
 
 
+
+
 Please include an Appendix where you focus on an aspect of surveys, sampling or observational data, related to your paper. This should be an in-depth exploration, akin to the “idealized methodology/survey/pollster methodology” sections of Paper 2. Some aspect of this is likely covered in the Measurement sub-section of your Data section, but this Appendix would be much more detailed, and might include aspects like simulation, links to the literature, explorations and comparisons, among other aspects.
 
 
@@ -904,4 +990,5 @@ Please include an Appendix where you focus on an aspect of surveys, sampling or 
 
 
 # References
+
 
