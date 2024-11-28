@@ -52,10 +52,10 @@ saveRDS(
 
 #### Visualize results and Testing ####
 
-future_test_data <- analysis_data %>% filter(region == "National", time >= 72)
+future_test_data <- analysis_data %>% filter(time >= 72)
 
 future_predictions <- predict(
-  bhm_model,
+  model,
   newdata = future_test_data,
   allow_new_levels = TRUE,  # Allow unseen region/category levels
   summary = TRUE  # Get the mean and confidence intervals
@@ -65,17 +65,24 @@ future_predictions <- data.frame(future_predictions)
 
 check_data <-  cbind(future_test_data, future_predictions)
 
+categories <- unique(analysis_data$category)
 
-check_data_rice <- check_data %>% filter(category == "Other starchy vegetables, fresh")
-
-
-ggplot(check_data_rice, aes(x = time)) +
-  geom_line(aes(y = unitValue_lg, color = "red"), linewidth = 1) +
-  geom_line(aes(y = Estimate, color = "blue"), linewidth = 1) +
+for (cat in categories) {
+  check_data_cat <- check_data %>% filter(category == cat)
+  
+  plot <- ggplot(check_data_cat, aes(x = time)) +
+    geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
+    geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1)
   labs(
-    title = "Two Variables Over Time",
+    title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
     x = "Time",
     y = "Value",
     color = "Legend"
   ) +
-  theme_minimal()
+    scale_color_manual(
+      values = c("Actual Unit Value" = "red", "Predicted Unit Value" = "blue")
+    ) +
+    theme_minimal()
+  
+  ggsave(filename = paste0("../other/plots/", gsub("[^A-Za-z0-9]", "_", cat), ".png"), plot = plot)
+}
