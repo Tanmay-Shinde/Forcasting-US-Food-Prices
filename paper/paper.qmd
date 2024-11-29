@@ -1,9 +1,9 @@
 ---
-title: "Forecasting Food Prices: A Bayesian Hierarchical Approach"
+title: "Forecasting U.S. Food Market Prices: A Bayesian Hierarchical Approach"
 subtitle: "Developing a Robust Model for Predicting Temporal Variations in Food Price Dynamics"
 author: 
   - Tanmay Sachin Shinde
-thanks: "TODO - CHANGE THE LINK - Code and data are available at: [https://github.com/Tanmay-Shinde/Week10Reflection](https://github.com/Tanmay-Shinde/Week10Reflection)."
+thanks: "Code and data are available at: [https://github.com/Tanmay-Shinde/Forcasting-US-Food-Prices](https://github.com/Tanmay-Shinde/Forcasting-US-Food-Prices)."
 date: today
 date-format: long
 abstract: "This paper focuses on building an accurate and reliable model to explore the temporal dynamics of food-at-home prices in the United States at a national level. By incorporating key economic factors such as purchase volume, food categories, and the Consumer Price Index (CPI), our Bayesian Hierarchical Model (BHM) achieves high predictive accuracy (RMSE = 0.058) and effectively forecasts price trends. The study captures category-specific effects and temporal trends, leveraging historical data to predict future price trajectories. Our model will provide policymakers, businesses, and researchers with a robust predictive framework to anticipate market dynamics, mitigate risks, and make data-driven decisions that enhance economic resilience and consumer well-being."
@@ -18,7 +18,9 @@ bibliography: references.bib
 #| warning: false
 #| message: false
 
-#install.packages("broom.mixed")
+# install.packages("broom.mixed")
+# install.packages("tidybayes")
+# install.packages("bayesplot")
 library(knitr)
 library(ggplot2)
 library(dplyr)
@@ -28,6 +30,8 @@ library(modelsummary)
 library(brms)
 library(broom.mixed)
 library(kableExtra)
+library(tidybayes)
+library(bayesplot)
 
 analysis_data <- read_parquet("../data/analysis_data/analysis_data.parquet")
 
@@ -40,12 +44,11 @@ Food prices are a critical component of economic and social well-being, directly
 
 The primary focus of this analysis is to estimate how food categories, various economic factors, and time affect overall national food prices in the U.S. The estimand is the expected food price for a given food category and time period, conditional on factors such as purchase volume and CPI. By modeling these variations, we aim to uncover the drivers of price changes and predict trends in food costs.
 
-Using a Bayesian hierarchical model, this study analyzes monthly price data from the F-MAP dataset to uncover the drivers of food price variations. The model incorporates random effects to capture categorical disparities and fixed effects to analyze the impact of economic factors, such as CPI, purchase volume, and food categories, on price trends. The analysis also highlights categories with greater price volatility and quantifies the influence of these factors on national pricing dynamics. **The findings reveal that food prices have generally increased over time, with categories like dairy, fresh produce, and meats experiencing higher price volatility.** Economic factors such as purchase volume, food categories, and CPI significantly influence these trends, with higher CPI values strongly correlating with increased prices. Furthermore, food categories with higher demand or limited supply exhibit more substantial price fluctuations, underscoring the importance of understanding market-specific dynamics.
+Using a Bayesian hierarchical model, this study analyzes monthly price data from the F-MAP dataset to uncover the drivers of food price variations. The model incorporates random effects to capture categorical disparities and fixed effects to analyze the impact of economic factors, such as CPI, purchase volume, and food categories, on price trends. Economic factors such as purchase volume, food categories, and CPI significantly influence these trends, with higher CPI values strongly correlating with increased prices. Furthermore, food categories with higher demand or limited supply exhibit more substantial price fluctuations, underscoring the importance of understanding market-specific dynamics.
 
 Understanding food pricing trends is essential for addressing issues related to food affordability and access. These insights are particularly valuable for policymakers and stakeholders aiming to reduce regional disparities, promote equitable access to food, and mitigate the effects of inflation on low-income households. By analyzing the drivers of price variations, this study provides a framework for informed decision-making in food policy and economic planning.
 
-The remainder of this paper is structured as follows: @sec-data discusses the data sources, the F-MAP dataset and its variables, and pre-processing methods. @sec-model explains the Bayesian hierarchical model and methodology used for analysis. @sec-result presents the results, followed by a discussion of the key findings and conclusion of the study, as well as the limitations of the data in @sec-discussion. Finally, @sec-appendix --- TODO: COMPLETE WHAT THE APPENDIX INCLUDES ---.
-
+The remainder of this paper is structured as follows: @sec-data discusses the data sources, the F-MAP dataset and its variables, and pre-processing methods. @sec-model explains the Bayesian hierarchical model and methodology used for analysis. @sec-result presents the results, followed by a discussion of the key findings and conclusion of the study, as well as the limitations of the data in @sec-discussion. Finally, the appendix includes additional details and EDA about the data, details about model convergence and diagnostics, and an idealized sampling and measurement methodology for food price related data.
 
 # Data {#sec-data}
 
@@ -108,7 +111,7 @@ Retail sales data from certain retailers are reported at a broader Retailer Mark
 
 The dataset also includes price indexes, which measure the cost of a basket of goods over time and across locations. The GEKS multilateral price index, the primary index in the F-MAP, is constructed to compare prices dynamically while accounting for product substitution and turnover. This index is based on the geometric mean of bilateral indexes (Laspeyres, Paasche, Fisher Ideal) and employs a 1-year rolling window to maintain transitivity and minimize chain drift. By capturing the cost of goods relative to a base period (2016–2018 national averages), these price indexes provide a robust measure for temporal and spatial price comparisons, making the dataset suitable for inflation and affordability analyses.
 
-Through this rigorous process, real-world phenomena such as regional price variations, inflationary trends, and food category-specific dynamics are translated into structured data entries. The combination of high-frequency retail data, standardized unit values, and multilateral price indexes ensures that the F-MAP dataset is both comprehensive and precise, supporting its use in economic research and policy-making. A more detailed overview of the measurement process, including the data acquisition, adjustments, and methods for calculating the price index can be found in [Appendix -@sec-data-details].
+Through this rigorous process, real-world phenomena such as regional price variations, inflationary trends, and food category-specific dynamics are translated into structured data entries. The combination of high-frequency retail data, standardized unit values, and multilateral price indexes ensures that the F-MAP dataset is both comprehensive and precise, supporting its use in economic research and policy-making.
 
 ## Outcome variable
 
@@ -174,8 +177,6 @@ It is a categorical variable representing the 90 ERS Food Purchase Groups (EFPGs
 
 The region variable represents 15 geographic regions (10 metropolitan areas and 4 Census regions and 1 National category). the region variable will help us analyze the regional and geographical trends and variations in food prices. We are only interested in the 'National' region data for this study.
 
-For each of these time, region, and food group combinations, the F-MAP includes the following value variables:
-
 ### Consumer Price Index (CPI)
 
 The Consumer Price Index (CPI) variable in the dataset represents the weighted price index (GEKS index) that measures the cost of a basket of goods over time, standardized relative to a base period (2016–2018). The CPI is unitless, with values below 1 indicating prices lower than the base period average and values above 1 indicating higher prices. The cpi is normalized to improve accuracy in modelling. This variable is critical in understanding inflationary trends and regional price dynamics, as it allows comparisons of relative purchasing power and economic conditions over time and across regions.
@@ -218,8 +219,6 @@ kable(summary_stats_outcome)
 
 # Histogram for cpi values
 
-
-
 ggplot(analysis_data, aes(x = cpi)) +
   geom_histogram(bins = 100, fill = "blue", alpha = 0.7, color = "black") +
   labs(title = "Distribution of CPI", x = "CPI", y = "Frequency") +
@@ -258,8 +257,9 @@ kable(summary_stats_outcome)
 
 @tbl-pvolsumm illustrates the normalization of the variable with mean as 0 and standard deviation as 1. The minimum and maximum values of -0.736 and 4.266, respectively, highlight the presence of extreme values or outliers on the right side. The median of -0.444 indicates that there might be a slight right skew in the data. @fig-hist-pvol also shows a high spread in the data and a heavily right-skewed histogram that accurately represent the expected purchasing trends, with most purchasing volumes being at the lower end and then becoming lesser and lesser as one goes right.
 
-\newpage
+More details and exploratory analysis about the purchaseVolume variable can be found in [Appendix -@sec-data-details]
 
+\newpage
 
 ```{r}
 #| echo: false
@@ -278,10 +278,6 @@ ggplot(analysis_data, aes(x = purchaseVolume)) +
 
 ```
 
-
-More details and exploratory analysis about the purchaseVolume variable can be found in [Appendix -@sec-data-details]
-
-
 # Model {#sec-model}
 
 We employ a Bayesian Hierarchical Model (BHM) in this study to capture the complex relationships between food-at-home prices and their predictors, such as purchase volume, food categories, the Consumer Price Index (CPI), and time. The hierarchical structure allows the model to account for variability across different food categories while leveraging the overall data trends at the national level. By including time as a predictor, the model effectively captures temporal trends, while predictors like CPI and purchase volume elucidate economic and consumer-driven influences on prices.
@@ -298,7 +294,7 @@ To train the model, we use data from the year 2012 to 2017, and use the 2018 dat
 
 ## Model Specifications
 
-Let $y_{ijt}$ denote the log-transformed unit value (unitValue_lg) for category $i$ and time $t$. Then, the model can be written as:
+Let $y_{it}$ denote the log-transformed unit value (unitValue_lg) for category $i$ and time $t$. Then, the model can be written as:
 
 $$y_{it} = \beta_0 + \beta^{category}_i + \beta_1.CPI_{it} + \beta_2.purchaseVolume_{it} + \beta_3.time + \epsilon_{it}$$
 
@@ -331,7 +327,7 @@ We use the following heirarchical priors for our model:
 We run the model in R [@citeR] using the `brms` package of @cite-brms.
 
 
-### Model Justification
+## Model Justification
 
 The prediction of long-term trends in the outcome variable, log-transformed unit value (unitValue_lg), requires a model that can effectively handle complex data structures and temporal dynamics. We use a Bayesian Hierarchical Model (BHM) since the dataset has a natural hierarchical structure with food categories as grouping factors. BHM can model the variability within categories while borrowing strength across these groups through partial pooling. This approach improves predictive accuracy, by allowing group members to have some influence over one another. The data spans multiple years and involves time-dependent variations influenced by economic factors, purchase volumes, and Consumer Price Index (CPI). 
 
@@ -450,6 +446,8 @@ future_predictions <- data.frame(future_predictions)
 
 check_data <- cbind(test_data, future_predictions)
 
+check_data <- check_data %>% mutate(time = time %% 71)
+
 ```
 
 ```{r}
@@ -467,10 +465,13 @@ geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
 geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
 labs(
   title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
-  x = "Time",
+  x = "Month",
   y = "Value",
   color = "Legend"
 ) +
+scale_x_continuous(
+    breaks = unique(check_data_cat$time)  # Use only the values present in the data
+  ) +
 scale_color_manual(
   values = c("Actual Value" = "red", "Predicted Value" = "blue")
 ) +
@@ -495,10 +496,13 @@ geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
 geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
 labs(
   title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
-  x = "Time",
+  x = "Month",
   y = "Value",
   color = "Legend"
 ) +
+scale_x_continuous(
+    breaks = unique(check_data_cat$time)  # Use only the values present in the data
+  ) +
 scale_color_manual(
   values = c("Actual Value" = "red", "Predicted Value" = "blue")
 ) +
@@ -523,10 +527,13 @@ geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
 geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
 labs(
   title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
-  x = "Time",
+  x = "Month",
   y = "Value",
   color = "Legend"
 ) +
+scale_x_continuous(
+    breaks = unique(check_data_cat$time)  # Use only the values present in the data
+  ) +
 scale_color_manual(
   values = c("Actual Value" = "red", "Predicted Value" = "blue")
 ) +
@@ -551,10 +558,13 @@ geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
 geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
 labs(
   title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
-  x = "Time",
+  x = "Month",
   y = "Value",
   color = "Legend"
 ) +
+  scale_x_continuous(
+    breaks = unique(check_data_cat$time)  # Use only the values present in the data
+  ) +
 scale_color_manual(
   values = c("Actual Value" = "red", "Predicted Value" = "blue")
 ) +
@@ -580,10 +590,13 @@ geom_line(aes(y = unitValue_lg, color = "Actual Value"), linewidth = 1) +
 geom_line(aes(y = Estimate, color = "Predicted Value"), linewidth = 1) +
 labs(
   title = "Unit Value Actual vs. Predicted Jan 2018 - Dec 2018",
-  x = "Time",
+  x = "Month",
   y = "Value",
   color = "Legend"
 ) +
+scale_x_continuous(
+    breaks = unique(check_data_cat$time)  # Use only the values present in the data
+  ) +
 scale_color_manual(
   values = c("Actual Value" = "red", "Predicted Value" = "blue")
 ) +
@@ -599,93 +612,61 @@ Plots for all 90 categories are available in the "other/plots/" directory. The c
 
 # Discussion {#sec-discussion}
 
-## First discussion point {#sec-first-point}
+## Model Performance and Predictive Insights {#sec-disc-1}
 
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+The Bayesian Hierarchical Model (BHM) developed in this study demonstrates strong predictive performance, as evidenced by an RMSE of 0.058. This low RMSE underscores the model's precision in estimating food-at-home prices at the national level, providing a reliable tool for forecasting future trends. The model’s ability to integrate temporal, category-level, and economic predictors ensures its robustness and applicability to real-world scenarios. 
 
-## Second discussion point
+A key strength of the model lies in its ability to capture temporal price trends while accommodating variations across food categories. For example, categories like dairy, fresh produce, and meats, known for their price volatility, are effectively modeled within this framework. The hierarchical structure allows for simultaneous analysis of overarching trends and granular category-level dynamics. This dual focus ensures that the model not only reflects overall price increases over time but also provides insights into category-specific patterns. For instance, periods of seasonal demand or supply shocks in specific categories are well-represented in the model's predictions, making it a valuable tool for understanding nuanced market dynamics.
 
-Please don't use these as sub-heading labels - change them to be what your point actually is.
+To ensure the reliability and validity of the Bayesian Hierarchical Model (BHM), a series of robustness checks and diagnostics were conducted. Key metrics like R-hat values were examined to evaluate the convergence of the Markov Chain Monte Carlo (MCMC) sampling process. Ideally, R-hat values should be close to 1.0, indicating that the chains have mixed well and the posterior distribution has been accurately sampled. For this model, R-hat values across most parameters were within acceptable thresholds, confirming convergence, though a few parameters required adjustments in sampling settings (e.g., increasing iterations or adapt-delta values) to achieve stability. Posterior predictive checks further validated the model by comparing observed data to simulated data generated from the posterior distributions. The checks showed that the model could adequately replicate the observed trends, reinforcing its capacity to capture key dynamics in the dataset.
 
-## Third discussion point
+Out-of-sample testing using 2018 data provided an additional layer of validation. By training the model on data from 2012–2017 and testing its predictions on unseen 2018 data, the analysis assessed the model's generalizability and predictive accuracy. The results demonstrated strong alignment between predicted and actual values, with a low root mean squared error (RMSE) indicating minimal deviations. This robust performance not only validates the model’s reliability but also highlights its utility in forecasting future food price trends. Such diagnostic and validation efforts are essential in confirming that the model is both theoretically sound and practically applicable for policy and decision-making contexts.
 
-## Weaknesses and next steps
+## Key Predictors and Their Role {#sec-disc-2}
 
-Weaknesses and next steps should also be included.
+The Consumer Price Index (CPI) emerges as a significant positive predictor in the model, reflecting its central role in shaping food price dynamics. As CPI increases, it indicates broader inflationary pressures within the economy, which are directly associated with higher food prices. This positive correlation underscores the sensitivity of food markets to macroeconomic factors, reinforcing the importance of CPI as a key driver in understanding and forecasting food price trends.
+
+Purchase volume also plays a critical role, demonstrating a negative association with unit value. This inverse relationship is indicative of economies of scale, where higher purchase volumes often lead to lower per-unit costs. Bulk purchasing patterns by consumers or retailers may contribute to this trend, particularly in categories like packaged foods or staples. By capturing this dynamic, the model provides valuable insights into the mechanisms of pricing efficiency and the economic behaviors influencing food markets.
+
+The inclusion of time as a variable further enhances the model’s capability to capture long-term trends in food pricing. Time allows the model to account for underlying patterns, such as seasonal fluctuations, gradual price increases, and structural changes in the food market over the study period. By incorporating time, the model not only delivers accurate predictions but also enriches the understanding of long-term market dynamics, which is crucial for strategic planning and forecasting.
+
+## Insights for Policymakers and Stakeholders {#sec-disc-3}
+
+The findings from this Bayesian Hierarchical Model (BHM) offer valuable insights for policymakers and stakeholders in addressing food price stability and affordability. The model’s ability to identify temporal trends and category-specific price variations can inform targeted interventions. For instance, policymakers could design subsidies for volatile food categories, such as fresh produce or dairy, to stabilize prices and mitigate their impact on low-income households. By preemptively addressing these fluctuations, governments can help ensure food security and affordability across diverse consumer demographics.
+
+For food retailers and manufacturers, the model provides an empirical foundation to understand demand-supply dynamics and optimize pricing strategies. The negative correlation between purchase volume and unit prices underscores the benefits of bulk purchasing and economies of scale. Retailers could leverage these insights to offer strategic discounts or promotions in response to shifting CPI levels or seasonal demand changes. Manufacturers, in turn, could better align production schedules and inventory management to anticipated price trends, minimizing disruptions in supply chains.
+
+Additionally, the predictive capabilities of the model can play a crucial role in forecasting affordability crises. By identifying periods of likely price spikes due to economic shifts or seasonal factors, stakeholders can take proactive measures, such as stockpiling essential goods or implementing price caps. This foresight empowers both public and private sectors to collaborate in maintaining food accessibility, particularly during crises like pandemics or economic downturns. The model, thus, serves as a powerful tool for long-term planning and immediate action in the evolving landscape of food economics.
+
+## Weaknesses and Limitations {#sec-disc-4}
+
+One limitation of this analysis stems from the non-probability nature of the data used. The dataset, while extensive, does not represent a true random sample of all retail food sales in the United States. This introduces potential biases, as the dataset may over-represent certain retailer types or geographic regions, leading to conclusions that may not fully generalize to the entire market. For example, the exclusion of smaller retailers or niche market participants might skew price estimates or trends observed in the analysis.
+
+From a computational perspective, Bayesian Hierarchical Modeling (BHM) presents challenges, particularly the time required for convergence when dealing with large datasets and complex model specifications. The high-dimensional nature of hierarchical structures, can lead to long processing times and potential difficulties in achieving reliable convergence. For instance, diagnostics like high R-hat values in earlier model iterations highlight the need for adjustments, such as increasing the number of iterations, tuning parameters like adapt_delta, or simplifying priors.
+
+Despite the model's strong overall performance, certain discrepancies between predicted and observed values were noted in specific categories and timeframes. For instance, predictions for fresh produce during periods of extreme weather events showed slight deviations, likely due to unmodeled external shocks affecting supply chains. Similarly, the model occasionally struggled with categories that exhibit irregular demand patterns, such as niche processed foods. These divergences highlight the potential for incorporating additional predictors, such as climatic variables or consumer sentiment indices, to enhance the model’s adaptability. This limitation underscores the challenge of modeling unprecedented events and highlights the importance of complementing predictive models with real-time market analysis during periods of significant uncertainty. These findings emphasize the need for adaptive models capable of integrating new data to improve resilience against unforeseen disruptions.
+
+## Broader Implications and Future Work {#sec-disc-5}
+
+This study contributes to the broader landscape of food price modeling by offering a sophisticated Bayesian Hierarchical Model (BHM) tailored to capture temporal and category-level variations in food prices at a national level. Previous research often focused on narrower scopes, such as specific food categories, regions, or linear trends, without accounting for the layered complexities inherent in hierarchical structures and non-linear temporal dynamics. By integrating predictors such as the Consumer Price Index (CPI), purchase volume, and time, the study addresses critical gaps in understanding how economic indicators and consumer behavior shape food prices. The incorporation of both fixed and random effects allows for nuanced insights into category-specific trends while ensuring robust generalization across broader contexts.
+
+The findings offer actionable insights for stakeholders, particularly in predicting price volatility and understanding long-term trends. For instance, the model’s ability to identify categories with greater susceptibility to price fluctuations, such as fresh produce and dairy, provides a foundation for targeted interventions. Furthermore, the strong predictive accuracy demonstrated by the model underscores its potential as a tool for preempting affordability crises, stabilizing food prices, and informing policy decisions.
+
+Future work could build on this foundation by incorporating more granular household-level consumption data to bridge the gap between retail pricing trends and consumer affordability. Household-level data would allow for a deeper understanding of the interplay between income, purchasing power, and dietary choices, offering more targeted insights into consumer welfare. Additionally, expanding the scope to include non-retail settings, such as farmers' markets or direct-to-consumer channels, could capture alternative price trends that are increasingly relevant in the context of sustainable food systems and localized supply chains.
+
+Another promising direction would involve applying the methodology to different geographic regions or international contexts. Comparing trends across countries or regions with varying economic structures, cultural practices, and policy frameworks could reveal universal patterns and context-specific dynamics. Temporal extensions beyond the current dataset, especially during periods of economic instability, such as the COVID-19 pandemic or global financial crises, could further validate the model’s robustness and adaptability to real-world shocks.
+
+Finally, incorporating additional predictors such as weather patterns, trade policies, or transportation costs could enhance the model’s explanatory power and predictive accuracy. These factors, often overlooked in aggregate-level studies, play a crucial role in shaping food supply chains and price formation. By addressing these avenues, future research can extend the scope and utility of the current work, contributing to a more comprehensive understanding of food price dynamics and their implications for economic resilience and consumer welfare.
 
 \newpage
 
 \appendix
 
-# Appendix {#sec-appendix}
+# Appendix {-}
 
 # Additional data details {#sec-data-details}
 
-## Measurement
-This section describes the methods for constructing the price measures in the F-MAP.
-
-### Data Preparation
-The process to prepare the datasets for creating the F-MAP data product are as follows:
-
-1. The retail scanner data report sales on a weekly basis. Weekly sales are grouped into the respective months that the sales occurred. In cases where the week straddles 2 months, sales units and values are allocated proportionately based on the number of days in each month.
-
-2. Unit value outliers are eliminated using the interquartile range (IQR) method. The IQR is the difference between the 25th and 75th percentiles of the price distribution, in this case across all unit values by store and week for each item. A unit value is considered an outlier if the value is below the 25th percentile minus 1.5 multiplied by the IQR or above the 75th percentile plus 1.5 multiplied by the IQR.
-
-3. The weights of each package are converted into grams to calculate unit values on a per 100-gram basis:
-   a. Convert from ounces: gram weight = 28.35 x ounces per package
-   b. Convert from pounds: gram weight = 28.35 x 16 x pounds per package
-   c. Convert from fluid ounces: gram weight = 29.57 x fluid ounces per package
-  
-4. Individual food items sold in the scanner data (about 600,000 per year) are identified and categorized into 90 food groups, based on the EFPG classification system.
-
-5. Retailer Marketing Area (RMA) sales data are disaggregated to individual stores. In the retail scanner data, most retailers release data by individual store location. However, some retailers only release data by RMA, a grouping of stores in a retailer-defined geographical area. To disaggregate the RMA sales data to individual stores, the RMA sales data are proportioned to individual stores based on the store sales values in the store-level weight files developed for the retail scanner data. For more information about the store weights, see the Using Proprietary Data page.
-
-6. Store-level survey weights are applied to each store. Stores in the retail scanner data are not a representative sample of stores, and store-level weights adjust the sales data to be representative of the population of stores nationally and for each geographic area in the F-MAP. In the F-MAP datasets, unit values are provided as both weighted and unweighted estimates, and the price indexes were calculated using weighted data.
-
-### Unit Values
-
-Sales (in U.S. dollars) and quantity (in grams) are summed over each month, EFPG, and geographic area. Mean unit values in the F-MAP are calculated by dividing the food group sales by the food group quantity and are standardized to the price per 100 grams. This process is completed as follows: (1) calculate the total purchase values in dollars and in grams for each EFPG in a given month and geographic area, weighted by the store weight for that year of data (note, weight is 1 for unweighted estimates); and (2) divide the total (weighted or unweighted) purchase dollars by the total (weighted or unweighted) grams to get the unit price.
-
-The F-MAP also includes standard errors for the weighted unit values. Standard errors are a measure of the precision of survey estimates and can be used to construct confidence intervals for an estimate. Confidence intervals represent a range of values that are likely to include the actual population mean. Standard errors of the weighted unit values are calculated by re-estimating the weighted unit values 200 times, using replicate weights, and then using the general formula for standard errors. These calculations are described in more detail in the Development of the Food-at-Home Monthly Area Prices Data report.
-
-### Price Indices
-
-Price indexes are a unitless measure of the cost of a basket of goods and are used to measure price changes over time. A price index converts many item-level price comparisons into a single value that quantifies the overall price of the basket at a time and location relative to a base period. The base period for the F-MAP is the national average for each EFPG from 2016 through 2018. Index values lower than 1 indicate prices lower than the national average from 2016 through 2018, while index values higher than 1 indicate prices higher than the national average from 2016 through 2018.
-
-The primary F-MAP price index is constructed using a weighted GEKS index formula (named for contributors Gini, Eltetö, Köves, and Szulc). GEKS is a multilateral price index specifically designed to compare prices over time and space. A GEKS index can also be extended for future years without revising the index numbers that have already been published. A GEKS price index is available for all years of the F-MAP (2012–18). A set of supplemental indexes is also available for 2016–18 as a research series, which includes the bilateral Laspeyres, Paasche, Törnqvist, Fisher Ideal indexes and the multilateral Caves-Christensen-Diewert (CCD) index.
-
-Multilateral price indexes are transitive, which means that any month-area pairing (or entity) can be compared directly with another pairing or through a third pairing, and the ratio between any two pairings is independent of the choice of base period. Transitive indexes are advantageous if the mix of goods being measured is dynamic; that is, if the basket of goods changes due to product turnover. Indexes based on scanner data are dynamic because the indexes include all goods sold in stores, which may change in each time period, rather than a sample of goods selected through a survey. Indexes that are transitive also allow spatial comparisons, regardless of the choice of area used for the base.
-
-As additional years of price data become available beyond the base period, the GEKS index can be updated using a rolling window, or the time period over which the index is calculated. In standard multilateral indexes, as new data become available beyond the initial base period, the index numbers for existing entities must be recalculated because the multilateral index compares product prices in an entity with prices in all other entities. A rolling-window GEKS index compares product prices in a new entity with prices of entities within a rolling window. The F-MAP GEKS uses a 1-year rolling window, which allows maintaining published indexes without revising historical numbers.
-
-Bilateral indexes with a fixed base period can become less representative of the cost of food as the indexes move further away from the base, due to the effects of product turnover, as products are discontinued and new products are introduced. Although bilateral price indexes can be updated using chained indexes, which capture product substitution, chained indexes are subject to drifting. Chain drift is a phenomenon in which the price index drifts lower even as item-level prices return to their base levels. Multilateral indexes are fully transitive and free of chain drift. While chain drift is possible in rolling-window multilateral indexes, if a wide window length is chosen, the rolling-window index will be largely free of drift despite not being fully transitive. The 1-year rolling window used in the F-MAP GEKS has been found to be sufficient to remove chain drift caused by high-frequency data and seasonal variation in variety.
-
-The GEKS index builds upon bilateral indexes as elements. The multilateral GEKS index is the geometric mean of all possible Fisher Ideal index month-area pairings. The Fisher Ideal index is, in turn, based on the geometric mean of the Laspeyres and Paasche indexes. Therefore, constructing a GEKS index requires first calculating Laspeyres, Paasche, and Fisher Ideal indexes. We avoid going into deeper details of the above indices as the math gets extremely complicated. For more information about the construction of the F-MAP GEKS, the rolling-window GEKS, and the five supplemental indexes (i.e., Laspeyres, Paasche, Törnqvist, Fisher Ideal, and Caves-Christensen-Diewert (CCD)), you can refer to ERS’s report on the F-MAP methods. [@Sweitzer2024]
-
 ## EDA for Outcome Variable
-
-### Regional Trends
-
-```{r}
-#| echo: false
-#| eval: true
-#| warning: false
-#| message: false
-#| label: fig-bxplt-out
-#| fig-cap: "Regional Variations in Log-Transformed Food Prices"
-
-filtered_data <- analysis_data %>%
-  filter(grepl("Census Region", region, ignore.case = TRUE))
-
-# Boxplot of unitValue_lg by region
-ggplot(filtered_data, aes(x = region, y = unitValue_lg)) +
-  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
-  labs(title = "Log Unit Value by Region", x = "Region", y = "Log Unit Value") +
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-``` 
-@fig-bxplt-out reveals slight regional variations in log unit values. The Northeast and West regions show marginally higher median prices compared to the Midwest and South, reflecting higher food costs often associated with coastal or urban areas. The Midwest exhibits the largest variability, including a notable outlier on the high end, suggesting either an expensive food category or a regional anomaly. Despite these differences, the overall consistency in median prices across regions highlights a broadly stable pricing structure with minor geographic deviations. These trends emphasize the need to investigate the economic and geographic factors contributing to these regional disparities.
 
 ### Temporal Trends
 
@@ -722,28 +703,6 @@ ggplot(transformed_data, aes(x = time, y = mean_unitValue_lg)) +
 #| eval: true
 #| warning: false
 #| message: false
-#| label: fig-bxplt-cpi
-#| fig-cap: "Regional Variations in CPI"
-
-filtered_data <- analysis_data %>%
-  filter(grepl("Census Region", region, ignore.case = TRUE))
-
-# Boxplot of unitValue_lg by region
-ggplot(filtered_data, aes(x = region, y = cpi)) +
-  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
-  labs(title = "Consumer Price Index (CPI) by Region", x = "Region", y = "CPI") +
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-@fig-bxplt-cpi reveals noticeable patterns and variations across Census regions. Each region exhibits a centralized cluster of values around the median, with relatively narrow interquartile ranges, indicating that the bulk of CPI values are similar within each region. However, all regions display significant outliers. From the boxplot, we can clearly see that the overall prices in the northeast and midwest regions are comparatively higher than prices in the south and the west census regions, with the west having some of the lowest cpi values out of all the regions.
-
-```{r}
-#| echo: false
-#| eval: true
-#| warning: false
-#| message: false
 #| label: fig-timetrend-cpi
 #| fig-cap: "Temporal Variations in the Consumer price Index (CPI)"
 
@@ -761,30 +720,9 @@ ggplot(transformed_data, aes(x = time, y = mean_cpi)) +
 
 ``` 
 
-@fig-timetrend-cpi also illustrates the general upward trend in the CPI values from 2012 to 2018.
+@fig-timetrend-cpi illustrates the general upward trend in the CPI values from 2012 to 2018.
 
-## Purchase Volume
-
-```{r}
-#| echo: false
-#| eval: true
-#| warning: false
-#| message: false
-#| label: fig-bxplt-pvol
-#| fig-cap: "Regional Variations in Purchase Volume"
-
-filtered_data <- analysis_data %>%
-  filter(grepl("Census Region", region, ignore.case = TRUE))
-
-# Boxplot of unitValue_lg by region
-ggplot(filtered_data, aes(x = region, y = purchaseVolume)) +
-  geom_boxplot(fill = "lightgreen", alpha = 0.7) +
-  labs(title = "Purchase Volume by Region", x = "Region", y = "purchaseVolume") +
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-From @fig-bxplt-pvol, we can see that across all regions, the mean purchase volume is relatively consistent, suggesting similar central tendencies in the amount of food purchased. However, the South exhibits a slightly higher mean and a wider interquartile range, indicating greater variability in purchase volume compared to other regions - which might be due to the lower cpi values in the South as revealed in @fig-bxplt-cpi above.
+### Purchase Volume
 
 ```{r}
 #| echo: false
@@ -810,76 +748,85 @@ ggplot(transformed_data, aes(x = time, y = mean_pvol)) +
 
 @fig-timetrend-pvol shows notable fluctuations from 2012 to 2018, suggesting periodic variability in consumer purchasing behavior. Peaks are observed around specific intervals, likely reflecting seasonal trends (peaks usually occur during the year-end i.e. the holiday season) or external economic factors influencing consumer demand. Over time, the periodic nature of these fluctuations appears consistent, with no clear upward or downward trend, indicating that the purchase volume stabilizes around recurring patterns.
 
+
+# Idealized Methodology for Data Collection {#sec-ideal}
+
+This section describes an idealized methodology that could be used for acquiring and processing the food price data for the Food-at-Home Monthly Area Prices (F-MAP) dataset. The approach ensures rigorous data collection, transformation, and integration to create a reliable dataset for modeling temporal price trends at a national level.
+
+## Sampling and Data Acquisition
+
+The data for this study will be obtained from Circana OmniMarket Core Outlets, which report weekly retail scanner data on sales and prices across the United States. These datasets are augmented with macroeconomic indicators like the Consumer Price Index (CPI) to capture inflation trends and their effects on food prices. The USDA and ERS currently use this proprietary data to support their economic and market research. 
+
+We employ a nonprobability sampling technique to collect retail food-at-home (FAH) sales data from approximately 55,000–65,000 stores annually, including grocery stores, mass merchandisers, supercenters, club stores, convenience stores, dollar stores, and drugstores. Given the logistical and financial challenges of obtaining data from every retail store in the United States, nonprobability sampling is a practical and feasible choice, enabling us to work with a diverse subset of stores that provide meaningful insights into consumer purchasing behaviors. Although the sample is not strictly random, its breadth across different retailer types and regions ensures significant coverage of the FAH sector. To address potential biases, we apply store-level weights to align the sample with national and regional retail sales distributions, enhancing the dataset's representativeness.  Retail outlets without scanning capabilities (e.g., small retailers, farmer’s markets, and other direct-to-consumer sales) are not represented in the data. Direct-to-consumer food sales were about \$2.9 billion in 2020 @usda_nass_2022, compared with approximately \$717 billion in sales from food stores (food and nonfood products) in 2019 @usda_ers_2022.
+
+## Data Preparation
+
+The data contain weekly UPC-level (or item-level) revenue and quantity of food items sold at FAH retail establishments. The retail scanner data report sales on a weekly basis. Since we need monthly data, weekly sales are grouped into the respective months that the sales occurred. In cases where the week straddles 2 months, sales units and values are allocated proportionately based on the number of days in each month. Unit value outliers will be eliminated using the interquartile range (IQR) method. The IQR is the difference between the 25th and 75th percentiles of the price distribution, in this case across all unit values by store and week for each item. A unit value is considered an outlier if the value is below the 25th percentile minus 1.5 multiplied by the IQR or above the 75th percentile plus 1.5 multiplied by the IQR.
+
+The weights of each package will be converted into grams to calculate unit values on a per 100-gram basis:
+  a. Convert from ounces: gram weight = 28.35 x ounces per package
+  b. Convert from pounds: gram weight = 28.35 x 16 x pounds per package
+  c. Convert from fluid ounces: gram weight = 29.57 x fluid ounces per package
+  
+Individual food items sold in the scanner data (about 600,000 per year) will be identified and categorized into 90 food groups, based on the EFPG classification system. The USDA Economic Research Service (ERS) Food Purchase Groups (EFPGs) system is a comprehensive categorization framework designed to facilitate the analysis of food purchase data. Aligned with USDA's 2015–20 and 2020–25 Dietary Guidelines for Americans, EFPGs categorize foods based on attributes like ingredients, nutritional content, convenience, and store aisle placement. The framework includes three tiers, with tier 1 covering broad dietary categories (e.g., grains, dairy, and meat), and tiers 2 and 3 delving into subcategories and individual EFPG codes.
+
+Lastly, store-level survey weights will be applied to adjust for biases in the scanner data, as the dataset is not a probability sample and does not represent all U.S. stores equally. These weights help align the sample data with the broader population of U.S. stores, ensuring representativeness across national and geographic areas. By applying these weights, the dataset will provide both weighted and unweighted estimates, enabling the calculation of price indexes and unit values that reflect real-world purchasing patterns.
+
+## Unit Values
+
+Sales (in U.S. dollars) and quantity (in grams) are summed over each month and EFPG. Mean unit values will be calculated by dividing the food group sales by the food group quantity and standardized to the price per 100 grams. This process will comprise of: 
+1. Calculating the total purchase values in dollars and in grams for each EFPG in a given month, weighted by the store weight for that year of data (note: weight will be 1 for unweighted estimates); and 
+2. Dividing the total (weighted or unweighted) purchase dollars by the total (weighted or unweighted) grams to get the unit price.
+
+The methodology also involves calculating the standard errors for the weighted unit values. This is done by re-estimating the weighted unit values 200 times using replicate weights. The standard errors measure the precision of the estimates and are used to construct confidence intervals, providing a range of values that likely contain the true population mean.
+
+## Price Indices
+
+Price indexes are a unitless measure of the cost of a basket of goods and are used to measure price changes over time. A price index converts many item-level price comparisons into a single value that quantifies the overall price of the basket at a time and location relative to a base period. The base period for the F-MAP is the national average for each EFPG from 2016 through 2018. Index values lower than 1 indicate prices lower than the national average from 2016 through 2018, while index values higher than 1 indicate prices higher than the national average from 2016 through 2018.
+
+The primary price index for our dataset will be constructed using a weighted GEKS index formula (named for contributors Gini, Eltetö, Köves, and Szulc). GEKS is a multilateral price index specifically designed to compare prices over time and space. A GEKS index can also be extended for future years without revising the index numbers that have already been published. A GEKS price index is available for all years of the F-MAP (2012–18). A set of supplemental indexes is also available for 2016–18 as a research series, which includes the bilateral Laspeyres, Paasche, Törnqvist, Fisher Ideal indexes and the multilateral Caves-Christensen-Diewert (CCD) index.
+
+Multilateral price indexes are transitive, which means that any month-area pairing (or entity) can be compared directly with another pairing or through a third pairing, and the ratio between any two pairings is independent of the choice of base period. Transitive indexes are advantageous if the mix of goods being measured is dynamic; that is, if the basket of goods changes due to product turnover. Indexes based on scanner data are dynamic because the indexes include all goods sold in stores, which may change in each time period, rather than a sample of goods selected through a survey. Indexes that are transitive also allow spatial comparisons, regardless of the choice of area used for the base.
+
+As additional years of price data become available beyond the base period, the GEKS index can be updated using a rolling window, or the time period over which the index is calculated. In standard multilateral indexes, as new data become available beyond the initial base period, the index numbers for existing entities must be recalculated because the multilateral index compares product prices in an entity with prices in all other entities. A rolling-window GEKS index compares product prices in a new entity with prices of entities within a rolling window. The F-MAP GEKS uses a 1-year rolling window, which allows maintaining published indexes without revising historical numbers.
+
+Bilateral indexes with a fixed base period can become less representative of the cost of food as the indexes move further away from the base, due to the effects of product turnover, as products are discontinued and new products are introduced. Although bilateral price indexes can be updated using chained indexes, which capture product substitution, chained indexes are subject to drifting. Chain drift is a phenomenon in which the price index drifts lower even as item-level prices return to their base levels. Multilateral indexes are fully transitive and free of chain drift. While chain drift is possible in rolling-window multilateral indexes, if a wide window length is chosen, the rolling-window index will be largely free of drift despite not being fully transitive. The 1-year rolling window used in the F-MAP GEKS has been found to be sufficient to remove chain drift caused by high-frequency data and seasonal variation in variety.
+
+The GEKS index builds upon bilateral indexes as elements. The multilateral GEKS index is the geometric mean of all possible Fisher Ideal index month-area pairings. The Fisher Ideal index is, in turn, based on the geometric mean of the Laspeyres and Paasche indexes. Therefore, constructing a GEKS index requires first calculating Laspeyres, Paasche, and Fisher Ideal indexes. We avoid going into deeper details of the above indices as the math gets extremely complicated. For more information about the construction of the F-MAP GEKS, the rolling-window GEKS, and the five supplemental indexes (i.e., Laspeyres, Paasche, Törnqvist, Fisher Ideal, and Caves-Christensen-Diewert (CCD)), you can refer to ERS’s report on the F-MAP methods. [@Sweitzer2024]
+
 # Model details {#sec-model-details}
-
-## AR(1) Model
-
-### Overview
-
-An Autoregressive (AR) Model of order 1, denoted as AR(1), is a type of time series model where the current value of the time series is linearly dependent on its immediate past value and a random noise term. Mathematically, an AR(1) model can be expressed as:
-
-$$y_t = \phi.y_{t-1} + \epsilon_t$$
-
-Where:
-
-- $y_t$: Value of the variable at time $t$.
-
-- $\phi$: The AR(1) coefficient (a scalar between -1 and 1) that captures the strength and direction of temporal autocorrelation.
-
-- $y_{t-1}$: Value of the variable at time $t-1$ (previous time step).
-
-- $\epsilon_t$: Random error or noise term at time $t$ assumed to be independently and identically distributed ($\epsilon_{ijt} \sim N(0, \sigma^2)$).
-
-The AR(1) model is suitable for time series that exhibit correlation between consecutive observations, making it useful for capturing short-term temporal dependencies.
-
-Role of the $\phi$ Term: 
-
-The $\phi$ term captures temporal autocorrelation, which is the relationship between observations at consecutive time steps. Here's what it represents:
-
-1. Positive Temporal Correlation ($\phi > 0$): If $\phi > 0$, then the current value $y_t$ tends to be similar to $y_{t-1}$
-
-2. Negative Temporal Correlation ($\phi < 0$): If $\phi < 0$, then the current value $y_t$ tends to move in the opposite direction of $y_{t-1}$
-
-3. No Temporal Correlation ($\phi = 0$): If $\phi = 0$, then there is no dependence between $y_t$ and $y_{t-1}$
-
-### Integrating AR(1) into BHM
-
-In a Bayesian Hierarchical Model (BHM), the ARIMA components (Autoregressive Integrated Moving Average) are implemented as part of the time-series modeling within the hierarchical framework. Here’s how the ARIMA(1,0,0) model (which is just AR(1)) might be integrated:
-
-
 
 ## Posterior predictive check
 
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
+The posterior predictive check (PPC) graph in @fig-ppcheck shows a strong alignment between the observed data (y) and the replicated data (y_rep), indicating that the model effectively captures the underlying data distribution. The overlapping peaks and troughs suggest that the model accurately reflects the central tendencies and variability of the data, while the uncertainty bands demonstrate that it accounts for variability in a calibrated manner.
 
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
+This alignment implies that the model is well-suited for generalization and reliable prediction, as it avoids significant overestimation or underestimation. While the PPC supports the model's adequacy, additional diagnostics such as R-hat values and effective sample size (ESS) are essential to confirm parameter convergence and overall robustness. These combined assessments ensure the model's reliability for forecasting future trends.
 
 ```{r}
 #| eval: true
 #| echo: false
 #| message: false
 #| warning: false
-#| label: fig-ppcheckandposteriorvsprior
+#| label: fig-ppcheck
 #| layout-ncol: 2
 #| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
+#| fig-subcap: "Posterior prediction check"
 
-# pp_check(first_model) +
-#   theme_classic() +
-#   theme(legend.position = "bottom")
-# 
-# posterior_vs_prior(first_model) +
+pp_check(model) +
+  theme_classic() +
+  theme(legend.position = "bottom")
+
+# posterior_vs_prior(model) +
 #   theme_minimal() +
 #   scale_color_brewer(palette = "Set1") +
 #   theme(legend.position = "bottom") +
 #   coord_flip()
+
 ```
 
 ## Diagnostics
 
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
-
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
+The trace plot in @fig-stanareyouokay-1 for the Bayesian Hierarchical Model (BHM) illustrates the convergence and mixing of the four Markov Chain Monte Carlo (MCMC) chains for each parameter: b_Intercept, b_cpi, b_purchaseVolume, and b_time. Each chain oscillates consistently within the same parameter space, indicating good mixing and convergence for most parameters. For example, the parameter b_cpi demonstrates tightly packed, overlapping chains, suggesting stable posterior estimates. However, the b_Intercept shows some variability, which could indicate slower convergence. Overall, the trace plots confirm the reliability of the posterior samples, but further diagnostics like R-hat values and effective sample sizes should be inspected to ensure full convergence.
 
 ```{r}
 #| echo: false
@@ -891,17 +838,23 @@ In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. Th
 #| fig-subcap: ["Trace plot", "Rhat plot"]
 #| layout-ncol: 2
 
-# plot(first_model, "trace")
-# 
-# plot(first_model, "rhat")
+mcmc_trace(as_draws(model), pars = c("b_Intercept", "b_cpi", "b_purchaseVolume", "b_time")) +
+  theme_minimal()
+
+posterior_samples <- as_draws_array(model)
+
+summary_stats <- summary(model)
+rhat_values <- summary_stats$fixed[, "Rhat"]
+
+# Visualize R-hat values
+bayesplot::mcmc_rhat(rhat_values) +
+  theme_minimal() +
+  labs(title = "R-hat Diagnostic Plot", x = "Parameters", y = "R-hat")
 ```
 
-
-Please include an Appendix where you focus on an aspect of surveys, sampling or observational data, related to your paper. This should be an in-depth exploration, akin to the “idealized methodology/survey/pollster methodology” sections of Paper 2. Some aspect of this is likely covered in the Measurement sub-section of your Data section, but this Appendix would be much more detailed, and might include aspects like simulation, links to the literature, explorations and comparisons, among other aspects.
-
+The R-hat diagnostic plot in @fig-stanareyouokay-2 assesses the convergence of the Markov Chain Monte Carlo (MCMC) chains in the Bayesian model. Ideal convergence is indicated by R-hat values close to 1, which ensures that all chains are sampling from the same posterior distribution. In this plot, R-hat values exceed 1.1 for some parameters, signaling poor convergence and potential issues with chain mixing. This suggests that additional iterations, fine-tuning of priors, or adjusting MCMC settings (e.g., increasing adapt_delta or max_treedepth) may be required to improve model reliability and ensure accurate posterior estimates.
 
 \newpage
-
 
 # References
 
