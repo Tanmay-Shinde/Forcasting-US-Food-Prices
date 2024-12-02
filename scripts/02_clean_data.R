@@ -4,7 +4,7 @@
 # Date: 22 November, 2024
 # Contact: tanmay.shinde@mail.utoronto.ca
 # License: N/A
-# Pre-requisites: N/A
+# Pre-requisites: The `readxl` and `arrow` packages must have been installed
 
 #### Workspace setup ####
 # install.packages("readxl")
