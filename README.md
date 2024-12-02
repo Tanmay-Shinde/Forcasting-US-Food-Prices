@@ -23,5 +23,5 @@ Aspects of the code were developed with the assistance of ChatGPT. The **simulat
 To replicate the analysis and run the code in this repository, you'll need to install several R packages. You can install them directly from CRAN using the following commands in your R console:
 
 ```R
-install.packages(c("tidyverse", "rstanarm", "arrow", "testthat", "rsample", "MLmetrics", "modelsummary"))
+install.packages(c("tidyverse", "rstanarm", "readxl", "dplyr", "tidyr", "lubridate", "arrow", "testthat", "brms", "modelsummary"))
 ```
