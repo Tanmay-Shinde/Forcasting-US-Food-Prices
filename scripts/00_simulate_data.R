@@ -4,7 +4,7 @@
 # Date: 26 November 2024
 # Contact: tanmay.shinde@mail.utoronto.ca
 # License: N/A
-# Pre-requisites: The `tidyverse` package must be installed
+# Pre-requisites: The `tidyverse` and `arrow` packages must be installed
 
 
 #### Workspace setup ####
