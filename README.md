@@ -25,3 +25,5 @@ To replicate the analysis and run the code in this repository, you'll need to in
 ```R
 install.packages(c("tidyverse", "rstanarm", "readxl", "dplyr", "tidyr", "lubridate", "arrow", "testthat", "brms", "modelsummary"))
 ```
+
+The dataset is available in `data/raw_data/`. You can also download the dataset from the [USDA ERS Website](https://www.ers.usda.gov/data-products/food-at-home-monthly-area-prices/). The dataset is called "Food-at-Home Monthly Area Prices, 2012 to 2018”.
