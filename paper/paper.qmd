@@ -18,9 +18,11 @@ bibliography: references.bib
 #| warning: false
 #| message: false
 
+# Install packages if not available already
 # install.packages("broom.mixed")
 # install.packages("tidybayes")
 # install.packages("bayesplot")
+
 library(knitr)
 library(ggplot2)
 library(dplyr)
